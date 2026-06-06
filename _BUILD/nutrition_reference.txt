@@ -1,0 +1,29 @@
+# VALORI NUTRIZIONALI ESATTI (per 100g) - VERBATIM da schede originali Sassone
+# energy | fat | sat | carb | sugar | protein | salt | fibre
+01 ACETO BALSAMICO SPRAY: 959kJ/226kcal | 0,00 | 0,00 | 54,91 | 46,92 | 1,50 | 0,25 | -
+02 ANACARDI: 2580kJ/622kcal | 48 | 8,8 | 32 | 5,5 | 14 | 2,3 | 2,8
+03 ARACHIDI: 2526kJ/610kcal | 51 | 7,7 | 12 | 4,5 | 22 | 2,3 | 7,6
+04 BURRO BIANCHETTO 6%: 3454kJ/840kcal | 91,70 | 57,40 | 0,50 | 0,40 | 0,06 | 1,10 | -
+05 BURRO ESTIVO 3%: 3554kJ/864kcal | 94,50 | 59,20 | 0,60 | 0,50 | 0,50 | 1,20 | -
+06 CARPACCIO TARTUFO ACQUA: 259kJ/62kcal | 0,36 | 0,06 | 2,85 | 0,47 | 2,42 | 1,25 | -
+07 CREMA ACETO BALSAMICO TARTUFO: 942kJ/222kcal | 0,41 | 0,06 | 53,09 | 45,37 | 1,46 | 0,24 | -
+08 CREMA PORCINI E TARTUFO NERO: 815,2kJ/194,8kcal | 18,20 | 2,60 | 3,50 | 0,90 | 2,00 | 1,1 | -
+09 KETCHUP TARTUFATO: 445kJ/105kcal | 0,90 | 0,00 | 23,00 | 22,00 | 1,20 | 1,80 | -
+10 MIELE AL TARTUFO: 1429kJ/336kcal | 0,08 | 0,01 | 83,68 | 77,55 | 0,12 | 0,00 | -
+11 MANDORLE: 2534kJ/613kcal | 54 | 4,2 | 7,9 | 4,3 | 19 | 2,3 | 9,8
+12 NOCI: 2932kJ/710kcal | 65 | 6,0 | 14 | 3,0 | 14 | 1,5 | 6,4
+13 OLIO TARTUFO BIANCO: 3690kJ/868kcal | 99,74 | 14,44 | 0,00 | 0,00 | 0,00 | 0,00 | -
+14 OLIO TARTUFO NERO: 3696kJ/899kcal | 99,90 | 14,46 | 0,00 | 0,00 | 0,00 | 0,00 | -
+15 PERLE: 602kJ/141kcal | - | 0 | - | (zuccheri tot 210-230 g/l) | 0,1 | - | - (FORMATO SPECIALE)
+16 POLENTA: 1469kJ/346kcal | 1,25 | 0,26 | 74,33 | 0,59 | 8,22 | 0,14 | -
+17 RISO TARTUFO: 1463kJ/345kcal | 1,62 | 0,52 | 74,90 | 0,60 | 7,15 | 0,00 | -
+18 SALE GRIGIO: 41kJ/10kcal | 0,40 | 0,06 | 0,74 | 0,06 | 0,48 | 97,61 | -
+19 SALE ROSA: 41kJ/10kcal | 0,40 | 0,06 | 0,74 | 0,06 | 0,48 | 97,61 | -
+20 SALE TARTUFO BIANCO: 19kJ/5kcal | 0,31 | 0,05 | 0,03 | 0,03 | 0,24 | 98,61 | -
+21 SALE TARTUFO NERO/ESTIVO: 29kJ/7kcal | 0,40 | 0,06 | 0,06 | 0,06 | 0,48 | 97,61 | -
+22 SALSA TARTUFATA ESTIVO: 927kJ/225kcal | 20,00 | 2,5 | 5,00 | 1,00 | 2,00 | 1,00 | -
+23 SALSA TARTUFATA BIANCA: 831kJ/202kcal | 18,50 | 2,00 | 4,20 | 0,80 | 2,20 | 1,20 | -
+24 TARALLI: 1545kJ/368kcal | 15,00 | 1,60 | 47,00 | 1,10 | 7,20 | 1,20 | -
+25 TARTUFATA PICCANTE: 869,9kJ/207,9kcal | 14,00 | 2,10 | 12,50 | 3,20 | 4,50 | 1,20 | -
+26 MAIONESE: 2906kJ/721kcal | 79,00 | 9,50 | 0,00 | 0,00 | 2,50 | 0,79 | -
+27 PESTO: 2482kJ/602kcal | 60,00 | 9,00 | 8,30 | 3,00 | 5,80 | 3,30 | -

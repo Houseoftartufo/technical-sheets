@@ -1,0 +1,442 @@
+[
+ {
+  "folder": "18_SALE_GRIGIO",
+  "title": {
+   "ITA": "Sale Tartufato Grigio",
+   "FR": "Sel Gris à la Truffe",
+   "ENG": "Grey Salt with Truffle",
+   "NL": "Grijs Zout met Truffel"
+  },
+  "general": {
+   "ean": "",
+   "typology": {
+    "ITA": "Prodotto a base vegetale, non sterilizzato.",
+    "FR": "Produit d'origine végétale, non stérilisé.",
+    "ENG": "Plant-based product, not sterilised.",
+    "NL": "Plantaardig product, niet gesteriliseerd."
+   },
+   "shelf": {
+    "ITA": "24 mesi",
+    "FR": "24 mois",
+    "ENG": "24 months",
+    "NL": "24 maanden"
+   },
+   "packaging": {
+    "ITA": "Vasetto in vetro.",
+    "FR": "Pot en verre.",
+    "ENG": "Glass jar.",
+    "NL": "Glazen pot."
+   },
+   "labelling": "Reg. UE 1169/2011",
+   "gmo": {
+    "ITA": "Assenti",
+    "FR": "Absents",
+    "ENG": "None",
+    "NL": "Geen"
+   }
+  },
+  "ingredients": {
+   "ingredients": {
+    "ITA": "Sale grigio, tartufo estivo essiccato (Tuber aestivum, Vittad.) 2%, aroma.",
+    "FR": "Sel gris, truffe d'été séchée (Tuber aestivum, Vittad.) 2 %, arôme.",
+    "ENG": "Grey salt, dried summer truffle (Tuber aestivum, Vittad.) 2%, flavouring.",
+    "NL": "Grijs zout, gedroogde zomertruffel (Tuber aestivum, Vittad.) 2%, aroma."
+   },
+   "allergens": {
+    "ITA": "Nessuno.",
+    "FR": "Aucun.",
+    "ENG": "None.",
+    "NL": "Geen."
+   }
+  },
+  "storage": {
+   "instructions": {
+    "ITA": "Conservare a temperatura ambiente, al riparo dalla luce e da fonti di calore. Dopo l'apertura, conservare il prodotto nella confezione originale, al riparo dalla luce diretta, in luogo asciutto e ben ventilato.",
+    "FR": "Conserver à température ambiante, à l'abri de la lumière et des sources de chaleur. Après ouverture, conserver le produit dans son emballage d'origine, à l'abri de la lumière directe, dans un endroit sec et bien ventilé.",
+    "ENG": "Store at room temperature, away from light and heat sources. After opening, keep the product in its original packaging, away from direct light, in a dry and well-ventilated place.",
+    "NL": "Bewaren op kamertemperatuur, beschermd tegen licht en warmtebronnen. Na opening het product in de originele verpakking bewaren, beschermd tegen direct licht, op een droge en goed geventileerde plaats."
+   },
+   "method": {
+    "ITA": "Una volta aperto, il prodotto è pronto per essere utilizzato.",
+    "FR": "Une fois ouvert, le produit est prêt à l'emploi.",
+    "ENG": "Once opened, the product is ready to use.",
+    "NL": "Eenmaal geopend is het product klaar voor gebruik."
+   }
+  },
+  "nutrition": {
+   "energy": "41 kJ / 10 kcal",
+   "fat": "0,40 g",
+   "sat": "0,06 g",
+   "carb": "0,74 g",
+   "sugar": "0,06 g",
+   "protein": "0,48 g",
+   "salt": "97,61 g"
+  },
+  "characteristics": {
+   "chemical": {
+    "ITA": "Metalli pesanti: < 0,10 ppm",
+    "FR": "Métaux lourds : < 0,10 ppm",
+    "ENG": "Heavy metals: < 0.10 ppm",
+    "NL": "Zware metalen: < 0,10 ppm"
+   },
+   "micro": {
+    "ITA": "Carica Batterica Totale (CBT): < 10 UFC/g; Coliformi: < 10 UFC/g; Muffe e lieviti: assenti; Listeria monocytogenes: assente in 25 g; Salmonella: assente in 25 g.",
+    "FR": "Flore aérobie mésophile totale : < 10 UFC/g ; Coliformes : < 10 UFC/g ; Levures et moisissures : absentes ; Listeria monocytogenes : absente dans 25 g ; Salmonelles : absentes dans 25 g.",
+    "ENG": "Total Bacterial Count (TBC): < 10 CFU/g; Coliforms: < 10 CFU/g; Yeasts and moulds: absent; Listeria monocytogenes: absent in 25 g; Salmonella: absent in 25 g.",
+    "NL": "Totaal kiemgetal (TBC): < 10 KVE/g; Coliformen: < 10 KVE/g; Gisten en schimmels: afwezig; Listeria monocytogenes: afwezig in 25 g; Salmonella: afwezig in 25 g."
+   }
+  }
+ },
+ {
+  "folder": "19_SALE_ROSA",
+  "title": {
+   "ITA": "Sale Rosa Himalaya al Tartufo",
+   "FR": "Sel Rose de l'Himalaya à la Truffe",
+   "ENG": "Himalayan Pink Salt with Truffle",
+   "NL": "Himalaya Roze Zout met Truffel"
+  },
+  "general": {
+   "ean": "",
+   "typology": {
+    "ITA": "Prodotto a base vegetale, non sterilizzato.",
+    "FR": "Produit d'origine végétale, non stérilisé.",
+    "ENG": "Plant-based product, not sterilised.",
+    "NL": "Plantaardig product, niet gesteriliseerd."
+   },
+   "shelf": {
+    "ITA": "24 mesi",
+    "FR": "24 mois",
+    "ENG": "24 months",
+    "NL": "24 maanden"
+   },
+   "packaging": {
+    "ITA": "Vasetto in vetro.",
+    "FR": "Pot en verre.",
+    "ENG": "Glass jar.",
+    "NL": "Glazen pot."
+   },
+   "labelling": "Reg. UE 1169/2011",
+   "gmo": {
+    "ITA": "Assenti",
+    "FR": "Absents",
+    "ENG": "None",
+    "NL": "Geen"
+   }
+  },
+  "ingredients": {
+   "ingredients": {
+    "ITA": "Sale Rosa dell'Himalaya, tartufo estivo essiccato (Tuber aestivum, Vittad.) 2%, aroma.",
+    "FR": "Sel rose de l'Himalaya, truffe d'été séchée (Tuber aestivum, Vittad.) 2 %, arôme.",
+    "ENG": "Himalayan pink salt, dried summer truffle (Tuber aestivum, Vittad.) 2%, flavouring.",
+    "NL": "Himalaya roze zout, gedroogde zomertruffel (Tuber aestivum, Vittad.) 2%, aroma."
+   },
+   "allergens": {
+    "ITA": "Nessuno.",
+    "FR": "Aucun.",
+    "ENG": "None.",
+    "NL": "Geen."
+   }
+  },
+  "storage": {
+   "instructions": {
+    "ITA": "Conservare a temperatura ambiente, al riparo dalla luce e da fonti di calore. Dopo l'apertura, conservare il prodotto nella confezione originale, al riparo dalla luce diretta, in luogo asciutto e ben ventilato.",
+    "FR": "Conserver à température ambiante, à l'abri de la lumière et des sources de chaleur. Après ouverture, conserver le produit dans son emballage d'origine, à l'abri de la lumière directe, dans un endroit sec et bien ventilé.",
+    "ENG": "Store at room temperature, away from light and heat sources. After opening, keep the product in its original packaging, away from direct light, in a dry and well-ventilated place.",
+    "NL": "Bewaren op kamertemperatuur, beschermd tegen licht en warmtebronnen. Na opening het product in de originele verpakking bewaren, beschermd tegen direct licht, op een droge en goed geventileerde plaats."
+   },
+   "method": {
+    "ITA": "Una volta aperto, il prodotto è pronto per essere utilizzato.",
+    "FR": "Une fois ouvert, le produit est prêt à l'emploi.",
+    "ENG": "Once opened, the product is ready to use.",
+    "NL": "Eenmaal geopend is het product klaar voor gebruik."
+   }
+  },
+  "nutrition": {
+   "energy": "41 kJ / 10 kcal",
+   "fat": "0,40 g",
+   "sat": "0,06 g",
+   "carb": "0,74 g",
+   "sugar": "0,06 g",
+   "protein": "0,48 g",
+   "salt": "97,61 g"
+  },
+  "characteristics": {
+   "chemical": {
+    "ITA": "Metalli pesanti: < 0,10 ppm",
+    "FR": "Métaux lourds : < 0,10 ppm",
+    "ENG": "Heavy metals: < 0.10 ppm",
+    "NL": "Zware metalen: < 0,10 ppm"
+   },
+   "micro": {
+    "ITA": "Carica Batterica Totale (CBT): < 10 UFC/g; Coliformi: < 10 UFC/g; Muffe e lieviti: assenti; Listeria monocytogenes: assente in 25 g; Salmonella: assente in 25 g.",
+    "FR": "Flore aérobie mésophile totale : < 10 UFC/g ; Coliformes : < 10 UFC/g ; Levures et moisissures : absentes ; Listeria monocytogenes : absente dans 25 g ; Salmonelles : absentes dans 25 g.",
+    "ENG": "Total Bacterial Count (TBC): < 10 CFU/g; Coliforms: < 10 CFU/g; Yeasts and moulds: absent; Listeria monocytogenes: absent in 25 g; Salmonella: absent in 25 g.",
+    "NL": "Totaal kiemgetal (TBC): < 10 KVE/g; Coliformen: < 10 KVE/g; Gisten en schimmels: afwezig; Listeria monocytogenes: afwezig in 25 g; Salmonella: afwezig in 25 g."
+   }
+  }
+ },
+ {
+  "folder": "20_SALE_CON_TARTUFO_BIANCO",
+  "title": {
+   "ITA": "Sale al Tartufo Bianco",
+   "FR": "Sel à la Truffe Blanche",
+   "ENG": "Salt with White Truffle",
+   "NL": "Zout met Witte Truffel"
+  },
+  "general": {
+   "ean": "",
+   "typology": {
+    "ITA": "Prodotto a base vegetale, non sterilizzato.",
+    "FR": "Produit d'origine végétale, non stérilisé.",
+    "ENG": "Plant-based product, not sterilised.",
+    "NL": "Plantaardig product, niet gesteriliseerd."
+   },
+   "shelf": {
+    "ITA": "24 mesi",
+    "FR": "24 mois",
+    "ENG": "24 months",
+    "NL": "24 maanden"
+   },
+   "packaging": {
+    "ITA": "Vasetto in vetro.",
+    "FR": "Pot en verre.",
+    "ENG": "Glass jar.",
+    "NL": "Glazen pot."
+   },
+   "labelling": "Reg. UE 1169/2011",
+   "gmo": {
+    "ITA": "Assenti",
+    "FR": "Absents",
+    "ENG": "None",
+    "NL": "Geen"
+   }
+  },
+  "ingredients": {
+   "ingredients": {
+    "ITA": "Sale grigio, tartufo bianco essiccato (Tuber magnatum, Pico.) 1%, aroma.",
+    "FR": "Sel gris, truffe blanche séchée (Tuber magnatum, Pico.) 1 %, arôme.",
+    "ENG": "Grey salt, dried white truffle (Tuber magnatum, Pico.) 1%, flavouring.",
+    "NL": "Grijs zout, gedroogde witte truffel (Tuber magnatum, Pico.) 1%, aroma."
+   },
+   "allergens": {
+    "ITA": "Nessuno.",
+    "FR": "Aucun.",
+    "ENG": "None.",
+    "NL": "Geen."
+   }
+  },
+  "storage": {
+   "instructions": {
+    "ITA": "Conservare a temperatura ambiente, al riparo dalla luce e da fonti di calore. Dopo l'apertura, conservare il prodotto nella confezione originale, al riparo dalla luce diretta, in luogo asciutto e ben ventilato.",
+    "FR": "Conserver à température ambiante, à l'abri de la lumière et des sources de chaleur. Après ouverture, conserver le produit dans son emballage d'origine, à l'abri de la lumière directe, dans un endroit sec et bien ventilé.",
+    "ENG": "Store at room temperature, away from light and heat sources. After opening, keep the product in its original packaging, away from direct light, in a dry and well-ventilated place.",
+    "NL": "Bewaren op kamertemperatuur, beschermd tegen licht en warmtebronnen. Na opening het product in de originele verpakking bewaren, beschermd tegen direct licht, op een droge en goed geventileerde plaats."
+   },
+   "method": {
+    "ITA": "Una volta aperto, il prodotto è pronto per essere utilizzato.",
+    "FR": "Une fois ouvert, le produit est prêt à l'emploi.",
+    "ENG": "Once opened, the product is ready to use.",
+    "NL": "Eenmaal geopend is het product klaar voor gebruik."
+   }
+  },
+  "nutrition": {
+   "energy": "19 kJ / 5 kcal",
+   "fat": "0,31 g",
+   "sat": "0,05 g",
+   "carb": "0,03 g",
+   "sugar": "0,03 g",
+   "protein": "0,24 g",
+   "salt": "98,61 g"
+  },
+  "characteristics": {
+   "chemical": {
+    "ITA": "Metalli pesanti: < 0,10 ppm",
+    "FR": "Métaux lourds : < 0,10 ppm",
+    "ENG": "Heavy metals: < 0.10 ppm",
+    "NL": "Zware metalen: < 0,10 ppm"
+   },
+   "micro": {
+    "ITA": "Carica Batterica Totale (CBT): < 10 UFC/g; Coliformi: < 10 UFC/g; Muffe e lieviti: assenti; Listeria monocytogenes: assente in 25 g; Salmonella: assente in 25 g.",
+    "FR": "Flore aérobie mésophile totale : < 10 UFC/g ; Coliformes : < 10 UFC/g ; Levures et moisissures : absentes ; Listeria monocytogenes : absente dans 25 g ; Salmonelles : absentes dans 25 g.",
+    "ENG": "Total Bacterial Count (TBC): < 10 CFU/g; Coliforms: < 10 CFU/g; Yeasts and moulds: absent; Listeria monocytogenes: absent in 25 g; Salmonella: absent in 25 g.",
+    "NL": "Totaal kiemgetal (TBC): < 10 KVE/g; Coliformen: < 10 KVE/g; Gisten en schimmels: afwezig; Listeria monocytogenes: afwezig in 25 g; Salmonella: afwezig in 25 g."
+   }
+  }
+ },
+ {
+  "folder": "21_SALE_CON_TARTUFO_NERO",
+  "title": {
+   "ITA": "Sale al Tartufo Estivo",
+   "FR": "Sel à la Truffe d'Été",
+   "ENG": "Salt with Summer Truffle",
+   "NL": "Zout met Zomertruffel"
+  },
+  "general": {
+   "ean": "",
+   "typology": {
+    "ITA": "Prodotto a base vegetale, non sterilizzato.",
+    "FR": "Produit d'origine végétale, non stérilisé.",
+    "ENG": "Plant-based product, not sterilised.",
+    "NL": "Plantaardig product, niet gesteriliseerd."
+   },
+   "shelf": {
+    "ITA": "24 mesi",
+    "FR": "24 mois",
+    "ENG": "24 months",
+    "NL": "24 maanden"
+   },
+   "packaging": {
+    "ITA": "Vasetto in vetro.",
+    "FR": "Pot en verre.",
+    "ENG": "Glass jar.",
+    "NL": "Glazen pot."
+   },
+   "labelling": "Reg. UE 1169/2011",
+   "gmo": {
+    "ITA": "Assenti",
+    "FR": "Absents",
+    "ENG": "None",
+    "NL": "Geen"
+   }
+  },
+  "ingredients": {
+   "ingredients": {
+    "ITA": "Sale, tartufo estivo essiccato (Tuber aestivum, Vittad.) 2%, aroma.",
+    "FR": "Sel, truffe d'été séchée (Tuber aestivum, Vittad.) 2 %, arôme.",
+    "ENG": "Salt, dried summer truffle (Tuber aestivum, Vittad.) 2%, flavouring.",
+    "NL": "Zout, gedroogde zomertruffel (Tuber aestivum, Vittad.) 2%, aroma."
+   },
+   "allergens": {
+    "ITA": "Nessuno.",
+    "FR": "Aucun.",
+    "ENG": "None.",
+    "NL": "Geen."
+   }
+  },
+  "storage": {
+   "instructions": {
+    "ITA": "Conservare a temperatura ambiente, al riparo dalla luce e da fonti di calore. Dopo l'apertura, conservare il prodotto nella confezione originale, al riparo dalla luce diretta, in luogo asciutto e ben ventilato.",
+    "FR": "Conserver à température ambiante, à l'abri de la lumière et des sources de chaleur. Après ouverture, conserver le produit dans son emballage d'origine, à l'abri de la lumière directe, dans un endroit sec et bien ventilé.",
+    "ENG": "Store at room temperature, away from light and heat sources. After opening, keep the product in its original packaging, away from direct light, in a dry and well-ventilated place.",
+    "NL": "Bewaren op kamertemperatuur, beschermd tegen licht en warmtebronnen. Na opening het product in de originele verpakking bewaren, beschermd tegen direct licht, op een droge en goed geventileerde plaats."
+   },
+   "method": {
+    "ITA": "Una volta aperto, il prodotto è pronto per essere utilizzato.",
+    "FR": "Une fois ouvert, le produit est prêt à l'emploi.",
+    "ENG": "Once opened, the product is ready to use.",
+    "NL": "Eenmaal geopend is het product klaar voor gebruik."
+   }
+  },
+  "nutrition": {
+   "energy": "29 kJ / 7 kcal",
+   "fat": "0,40 g",
+   "sat": "0,06 g",
+   "carb": "0,06 g",
+   "sugar": "0,06 g",
+   "protein": "0,48 g",
+   "salt": "97,61 g"
+  },
+  "characteristics": {
+   "chemical": {
+    "ITA": "Metalli pesanti: < 0,10 ppm",
+    "FR": "Métaux lourds : < 0,10 ppm",
+    "ENG": "Heavy metals: < 0.10 ppm",
+    "NL": "Zware metalen: < 0,10 ppm"
+   },
+   "micro": {
+    "ITA": "Carica Batterica Totale (CBT): < 10 UFC/g; Coliformi: < 10 UFC/g; Muffe e lieviti: assenti; Listeria monocytogenes: assente in 25 g; Salmonella: assente in 25 g.",
+    "FR": "Flore aérobie mésophile totale : < 10 UFC/g ; Coliformes : < 10 UFC/g ; Levures et moisissures : absentes ; Listeria monocytogenes : absente dans 25 g ; Salmonelles : absentes dans 25 g.",
+    "ENG": "Total Bacterial Count (TBC): < 10 CFU/g; Coliforms: < 10 CFU/g; Yeasts and moulds: absent; Listeria monocytogenes: absent in 25 g; Salmonella: absent in 25 g.",
+    "NL": "Totaal kiemgetal (TBC): < 10 KVE/g; Coliformen: < 10 KVE/g; Gisten en schimmels: afwezig; Listeria monocytogenes: afwezig in 25 g; Salmonella: afwezig in 25 g."
+   }
+  }
+ },
+ {
+  "folder": "22_SALSA_TARTUFATA_AL_TARTUFO_ESTIVO",
+  "title": {
+   "ITA": "Salsa Tartufata al Tartufo Estivo",
+   "FR": "Sauce Tartufata à la Truffe d'Été",
+   "ENG": "Tartufata Sauce with Summer Truffle",
+   "NL": "Tartufata-saus met Zomertruffel"
+  },
+  "general": {
+   "ean": "",
+   "typology": {
+    "ITA": "Prodotto a base vegetale, sterilizzato.",
+    "FR": "Produit d'origine végétale, stérilisé.",
+    "ENG": "Plant-based product, sterilised.",
+    "NL": "Plantaardig product, gesteriliseerd."
+   },
+   "shelf": {
+    "ITA": "36 mesi",
+    "FR": "36 mois",
+    "ENG": "36 months",
+    "NL": "36 maanden"
+   },
+   "packaging": {
+    "ITA": "Vasetto in vetro (80, 170, 500 g).",
+    "FR": "Pot en verre (80, 170, 500 g).",
+    "ENG": "Glass jar (80, 170, 500 g).",
+    "NL": "Glazen pot (80, 170, 500 g)."
+   },
+   "labelling": "Reg. UE 1169/2011",
+   "gmo": {
+    "ITA": "Assenti",
+    "FR": "Absents",
+    "ENG": "None",
+    "NL": "Geen"
+   }
+  },
+  "ingredients": {
+   "ingredients": {
+    "ITA": "Funghi prataioli coltivati (Agaricus bisporus), olio di semi di girasole, tartufo estivo (Tuber aestivum, Vittad.), olive nere, sale, aroma, aglio, prezzemolo.",
+    "FR": "Champignons de Paris cultivés (Agaricus bisporus), huile de graines de tournesol, truffe d'été (Tuber aestivum, Vittad.), olives noires, sel, arôme, ail, persil.",
+    "ENG": "Cultivated champignon mushrooms (Agaricus bisporus), sunflower seed oil, summer truffle (Tuber aestivum, Vittad.), black olives, salt, flavouring, garlic, parsley.",
+    "NL": "Gekweekte champignons (Agaricus bisporus), zonnebloemzaadolie, zomertruffel (Tuber aestivum, Vittad.), zwarte olijven, zout, aroma, knoflook, peterselie."
+   },
+   "allergens": {
+    "ITA": "Nessuno.",
+    "FR": "Aucun.",
+    "ENG": "None.",
+    "NL": "Geen."
+   }
+  },
+  "storage": {
+   "instructions": {
+    "ITA": "Conservare a temperatura ambiente, al riparo dalla luce e da fonti di calore. Dopo l'apertura, conservare in frigorifero tra 0 e 4°C e consumare entro 4-5 giorni.",
+    "FR": "Conserver à température ambiante, à l'abri de la lumière et des sources de chaleur. Après ouverture, conserver au réfrigérateur entre 0 et 4°C et consommer sous 4-5 jours.",
+    "ENG": "Store at room temperature, away from light and heat sources. After opening, keep refrigerated between 0 and 4°C and consume within 4-5 days.",
+    "NL": "Bewaren op kamertemperatuur, beschermd tegen licht en warmtebronnen. Na opening gekoeld bewaren tussen 0 en 4°C en binnen 4-5 dagen consumeren."
+   },
+   "method": {
+    "ITA": "Una volta aperto, il prodotto è pronto per essere utilizzato.",
+    "FR": "Une fois ouvert, le produit est prêt à l'emploi.",
+    "ENG": "Once opened, the product is ready to use.",
+    "NL": "Eenmaal geopend is het product klaar voor gebruik."
+   }
+  },
+  "nutrition": {
+   "energy": "927 kJ / 225 kcal",
+   "fat": "20,00 g",
+   "sat": "2,5 g",
+   "carb": "5,00 g",
+   "sugar": "1,00 g",
+   "protein": "2,00 g",
+   "salt": "1,00 g"
+  },
+  "characteristics": {
+   "chemical": {
+    "ITA": "Metalli pesanti: < 0,10 ppm",
+    "FR": "Métaux lourds : < 0,10 ppm",
+    "ENG": "Heavy metals: < 0.10 ppm",
+    "NL": "Zware metalen: < 0,10 ppm"
+   },
+   "micro": {
+    "ITA": "Carica Batterica Totale (CBT): < 10 UFC/g; Coliformi: < 10 UFC/g; Muffe e lieviti: assenti; Anaerobi solfito-riduttori: < 10 UFC/g; Listeria monocytogenes: assente in 25 g; Salmonella: assente in 25 g.",
+    "FR": "Flore aérobie mésophile totale : < 10 UFC/g ; Coliformes : < 10 UFC/g ; Levures et moisissures : absentes ; Anaérobies sulfito-réducteurs : < 10 UFC/g ; Listeria monocytogenes : absente dans 25 g ; Salmonelles : absentes dans 25 g.",
+    "ENG": "Total Bacterial Count (TBC): < 10 CFU/g; Coliforms: < 10 CFU/g; Yeasts and moulds: absent; Sulphite-reducing anaerobes: < 10 CFU/g; Listeria monocytogenes: absent in 25 g; Salmonella: absent in 25 g.",
+    "NL": "Totaal kiemgetal (TBC): < 10 KVE/g; Coliformen: < 10 KVE/g; Gisten en schimmels: afwezig; Sulfietreducerende anaeroben: < 10 KVE/g; Listeria monocytogenes: afwezig in 25 g; Salmonella: afwezig in 25 g."
+   }
+  }
+ }
+]
