@@ -1,0 +1,444 @@
+[
+ {
+  "folder": "08_CREMA_DI_FUNGHI_PORCINI_E_TARTUFO_NERO_ESTIVO",
+  "title": {
+   "ITA": "Crema di Porcini e Tartufo Nero Estivo",
+   "FR": "Crème de Cèpes et Truffe Noire d'Été",
+   "ENG": "Porcini & Summer Black Truffle Cream",
+   "NL": "Crème van Eekhoorntjesbrood en Zwarte Zomertruffel"
+  },
+  "general": {
+   "ean": "",
+   "typology": {
+    "ITA": "Prodotto a base vegetale, sterilizzato.",
+    "FR": "Produit d'origine végétale, stérilisé.",
+    "ENG": "Plant-based product, sterilised.",
+    "NL": "Plantaardig product, gesteriliseerd."
+   },
+   "shelf": {
+    "ITA": "36 mesi",
+    "FR": "36 mois",
+    "ENG": "36 months",
+    "NL": "36 maanden"
+   },
+   "packaging": {
+    "ITA": "Vasetto in vetro (80, 170 g).",
+    "FR": "Pot en verre (80, 170 g).",
+    "ENG": "Glass jar (80, 170 g).",
+    "NL": "Glazen pot (80, 170 g)."
+   },
+   "labelling": "Reg. UE 1169/2011",
+   "gmo": {
+    "ITA": "Assenti",
+    "FR": "Absents",
+    "ENG": "None",
+    "NL": "Geen"
+   }
+  },
+  "ingredients": {
+   "ingredients": {
+    "ITA": "Funghi porcini (Boletus edulis), tartufo nero estivo (Tuber aestivum Vitt.) 5%, olio extravergine di oliva, sale, pepe, prezzemolo, aroma.",
+    "FR": "Cèpes (Boletus edulis), truffe noire d'été (Tuber aestivum Vitt.) 5 %, huile d'olive extra vierge, sel, poivre, persil, arôme.",
+    "ENG": "Porcini mushrooms (Boletus edulis), summer black truffle (Tuber aestivum Vitt.) 5%, extra virgin olive oil, salt, pepper, parsley, flavouring.",
+    "NL": "Eekhoorntjesbrood (Boletus edulis), zwarte zomertruffel (Tuber aestivum Vitt.) 5%, extra vierge olijfolie, zout, peper, peterselie, aroma."
+   },
+   "allergens": {
+    "ITA": "Nessuno.",
+    "FR": "Aucun.",
+    "ENG": "None.",
+    "NL": "Geen."
+   }
+  },
+  "storage": {
+   "instructions": {
+    "ITA": "Conservare a temperatura ambiente, al riparo dalla luce e da fonti di calore. Dopo l'apertura, conservare in frigorifero tra 0 e 4°C e consumare entro 4-5 giorni.",
+    "FR": "Conserver à température ambiante, à l'abri de la lumière et des sources de chaleur. Après ouverture, conserver au réfrigérateur entre 0 et 4°C et consommer sous 4-5 jours.",
+    "ENG": "Store at room temperature, away from light and heat sources. After opening, keep refrigerated between 0 and 4°C and consume within 4-5 days.",
+    "NL": "Bewaren op kamertemperatuur, beschermd tegen licht en warmtebronnen. Na opening gekoeld bewaren tussen 0 en 4°C en binnen 4-5 dagen consumeren."
+   },
+   "method": {
+    "ITA": "Una volta aperto, il prodotto è pronto per essere utilizzato.",
+    "FR": "Une fois ouvert, le produit est prêt à l'emploi.",
+    "ENG": "Once opened, the product is ready to use.",
+    "NL": "Eenmaal geopend is het product klaar voor gebruik."
+   }
+  },
+  "nutrition": {
+   "energy": "815,2 kJ / 194,8 kcal",
+   "fat": "18,20 g",
+   "sat": "2,60 g",
+   "carb": "3,50 g",
+   "sugar": "0,90 g",
+   "protein": "2,00 g",
+   "salt": "1,1 g"
+  },
+  "characteristics": {
+   "chemical": {
+    "ITA": "Metalli pesanti: < 0,10 ppm",
+    "FR": "Métaux lourds : < 0,10 ppm",
+    "ENG": "Heavy metals: < 0.10 ppm",
+    "NL": "Zware metalen: < 0,10 ppm"
+   },
+   "micro": {
+    "ITA": "Carica Batterica Totale (CBT): < 10 UFC/g; Coliformi: < 10 UFC/g; Muffe e lieviti: assenti; Anaerobi solfito-riduttori: < 10 UFC/g; Listeria monocytogenes: assente in 25 g; Salmonella: assente in 25 g.",
+    "FR": "Flore aérobie mésophile totale : < 10 UFC/g ; Coliformes : < 10 UFC/g ; Levures et moisissures : absentes ; Anaérobies sulfito-réducteurs : < 10 UFC/g ; Listeria monocytogenes : absente dans 25 g ; Salmonelles : absentes dans 25 g.",
+    "ENG": "Total Bacterial Count (TBC): < 10 CFU/g; Coliforms: < 10 CFU/g; Yeasts and moulds: absent; Sulphite-reducing anaerobes: < 10 CFU/g; Listeria monocytogenes: absent in 25 g; Salmonella: absent in 25 g.",
+    "NL": "Totaal kiemgetal (TBC): < 10 KVE/g; Coliformen: < 10 KVE/g; Gisten en schimmels: afwezig; Sulfietreducerende anaeroben: < 10 KVE/g; Listeria monocytogenes: afwezig in 25 g; Salmonella: afwezig in 25 g."
+   }
+  }
+ },
+ {
+  "folder": "09_KETCHUP_TARTUFATO",
+  "title": {
+   "ITA": "Ketchup al Tartufo",
+   "FR": "Ketchup à la Truffe",
+   "ENG": "Truffle Ketchup",
+   "NL": "Truffelketchup"
+  },
+  "general": {
+   "ean": "",
+   "typology": {
+    "ITA": "Prodotto a base di tartufo, pastorizzato.",
+    "FR": "Produit à base de truffe, pasteurisé.",
+    "ENG": "Truffle-based product, pasteurised.",
+    "NL": "Truffelproduct, gepasteuriseerd."
+   },
+   "shelf": {
+    "ITA": "24 mesi",
+    "FR": "24 mois",
+    "ENG": "24 months",
+    "NL": "24 maanden"
+   },
+   "packaging": {
+    "ITA": "Vasetto in vetro (85 g).",
+    "FR": "Pot en verre (85 g).",
+    "ENG": "Glass jar (85 g).",
+    "NL": "Glazen pot (85 g)."
+   },
+   "labelling": "D.Lgs. 109/1992 e Reg. UE 1169/2011",
+   "gmo": {
+    "ITA": "Assenti",
+    "FR": "Absents",
+    "ENG": "None",
+    "NL": "Geen"
+   }
+  },
+  "ingredients": {
+   "ingredients": {
+    "ITA": "Pomodoro (148 g per 100 g di prodotto), aceto di alcool, tartufo estivo (Tuber aestivum Vitt.) 1%, zucchero, sale, spezie ed estratti di erbe aromatiche (contiene SEDANO), spezie, aroma.",
+    "FR": "Tomate (148 g pour 100 g de produit), vinaigre d'alcool, truffe d'été (Tuber aestivum Vitt.) 1 %, sucre, sel, épices et extraits de plantes aromatiques (contient du CÉLERI), épices, arôme.",
+    "ENG": "Tomato (148 g per 100 g of product), spirit vinegar, summer truffle (Tuber aestivum Vitt.) 1%, sugar, salt, spices and aromatic herb extracts (contains CELERY), spices, flavouring.",
+    "NL": "Tomaat (148 g per 100 g product), alcoholazijn, zomertruffel (Tuber aestivum Vitt.) 1%, suiker, zout, specerijen en aromatische kruidenextracten (bevat SELDERIJ), specerijen, aroma."
+   },
+   "allergens": {
+    "ITA": "Oltre a quanto dichiarato in MAIUSCOLO nel paragrafo precedente, il prodotto non contiene ulteriori ingredienti ad azione allergizzante.",
+    "FR": "Hormis les allergènes indiqués en MAJUSCULES dans le paragraphe précédent, le produit ne contient aucun autre ingrédient allergène.",
+    "ENG": "Apart from the allergens stated in CAPITAL LETTERS in the paragraph above, the product does not contain any other allergenic ingredients.",
+    "NL": "Naast de in HOOFDLETTERS vermelde allergenen in de vorige alinea bevat het product geen andere allergene ingrediënten."
+   }
+  },
+  "storage": {
+   "instructions": {
+    "ITA": "Conservare in luogo fresco e asciutto, al riparo dalla luce solare diretta (8-15°C). Dopo l'apertura, conservare in frigorifero tra 0 e 4°C e consumare entro 4-5 giorni.",
+    "FR": "Conserver dans un endroit frais et sec, à l'abri de la lumière directe du soleil (8-15°C). Après ouverture, conserver au réfrigérateur entre 0 et 4°C et consommer sous 4-5 jours.",
+    "ENG": "Store in a cool, dry place, away from direct sunlight (8-15°C). After opening, keep refrigerated between 0 and 4°C and consume within 4-5 days.",
+    "NL": "Bewaren op een koele, droge plaats, beschermd tegen direct zonlicht (8-15°C). Na opening gekoeld bewaren tussen 0 en 4°C en binnen 4-5 dagen consumeren."
+   },
+   "method": {
+    "ITA": "Una volta aperto, il prodotto è pronto per essere utilizzato.",
+    "FR": "Une fois ouvert, le produit est prêt à l'emploi.",
+    "ENG": "Once opened, the product is ready to use.",
+    "NL": "Eenmaal geopend is het product klaar voor gebruik."
+   }
+  },
+  "nutrition": {
+   "energy": "445 kJ / 105 kcal",
+   "fat": "0,90 g",
+   "sat": "0,00 g",
+   "carb": "23,00 g",
+   "sugar": "22,00 g",
+   "protein": "1,20 g",
+   "salt": "1,80 g"
+  },
+  "characteristics": {
+   "chemical": {
+    "ITA": "Metalli pesanti: < 0,10 ppm",
+    "FR": "Métaux lourds : < 0,10 ppm",
+    "ENG": "Heavy metals: < 0.10 ppm",
+    "NL": "Zware metalen: < 0,10 ppm"
+   },
+   "micro": {
+    "ITA": "Carica Batterica Totale (CBT): < 10 UFC/g; Coliformi: < 10 UFC/g; Muffe e lieviti: assenti; Listeria monocytogenes: assente in 25 g; Salmonella: assente in 25 g.",
+    "FR": "Flore aérobie mésophile totale : < 10 UFC/g ; Coliformes : < 10 UFC/g ; Levures et moisissures : absentes ; Listeria monocytogenes : absente dans 25 g ; Salmonelles : absentes dans 25 g.",
+    "ENG": "Total Bacterial Count (TBC): < 10 CFU/g; Coliforms: < 10 CFU/g; Yeasts and moulds: absent; Listeria monocytogenes: absent in 25 g; Salmonella: absent in 25 g.",
+    "NL": "Totaal kiemgetal (TBC): < 10 KVE/g; Coliformen: < 10 KVE/g; Gisten en schimmels: afwezig; Listeria monocytogenes: afwezig in 25 g; Salmonella: afwezig in 25 g."
+   }
+  }
+ },
+ {
+  "folder": "10_MIELE_AL_TARTUFO",
+  "title": {
+   "ITA": "Miele al Tartufo Bianchetto",
+   "FR": "Miel à la Truffe Bianchetto",
+   "ENG": "Honey with Bianchetto Truffle",
+   "NL": "Honing met Bianchetto-truffel"
+  },
+  "general": {
+   "ean": "",
+   "typology": {
+    "ITA": "Prodotto a base di tartufo, non sterilizzato.",
+    "FR": "Produit à base de truffe, non stérilisé.",
+    "ENG": "Truffle-based product, not sterilised.",
+    "NL": "Truffelproduct, niet gesteriliseerd."
+   },
+   "shelf": {
+    "ITA": "24 mesi",
+    "FR": "24 mois",
+    "ENG": "24 months",
+    "NL": "24 maanden"
+   },
+   "packaging": {
+    "ITA": "Vasetto in vetro (100, 170, 500 g).",
+    "FR": "Pot en verre (100, 170, 500 g).",
+    "ENG": "Glass jar (100, 170, 500 g).",
+    "NL": "Glazen pot (100, 170, 500 g)."
+   },
+   "labelling": "Reg. UE 1169/2011",
+   "gmo": {
+    "ITA": "Assenti",
+    "FR": "Absents",
+    "ENG": "None",
+    "NL": "Geen"
+   }
+  },
+  "ingredients": {
+   "ingredients": {
+    "ITA": "Miele d'acacia, tartufo bianchetto (Tuber borchii Vitt.) 0,5% (2% in origine), aroma.",
+    "FR": "Miel d'acacia, truffe bianchetto (Tuber borchii Vitt.) 0,5 % (2 % à l'origine), arôme.",
+    "ENG": "Acacia honey, bianchetto truffle (Tuber borchii Vitt.) 0.5% (2% originally), flavouring.",
+    "NL": "Acaciahoning, bianchetto-truffel (Tuber borchii Vitt.) 0,5% (2% oorspronkelijk), aroma."
+   },
+   "allergens": {
+    "ITA": "Nessuno.",
+    "FR": "Aucun.",
+    "ENG": "None.",
+    "NL": "Geen."
+   }
+  },
+  "storage": {
+   "instructions": {
+    "ITA": "Conservare a temperatura ambiente, al riparo dalla luce e da fonti di calore. Dopo l'apertura, conservare il prodotto nella confezione originale, al riparo dalla luce diretta e dal calore.",
+    "FR": "Conserver à température ambiante, à l'abri de la lumière et des sources de chaleur. Après ouverture, conserver le produit dans son emballage d'origine, à l'abri de la lumière directe et de la chaleur.",
+    "ENG": "Store at room temperature, away from light and heat sources. After opening, keep the product in its original packaging, away from direct light and heat.",
+    "NL": "Bewaren op kamertemperatuur, beschermd tegen licht en warmtebronnen. Na opening het product in de originele verpakking bewaren, beschermd tegen direct licht en warmte."
+   },
+   "method": {
+    "ITA": "Una volta aperto, il prodotto è pronto per essere utilizzato.",
+    "FR": "Une fois ouvert, le produit est prêt à l'emploi.",
+    "ENG": "Once opened, the product is ready to use.",
+    "NL": "Eenmaal geopend is het product klaar voor gebruik."
+   }
+  },
+  "nutrition": {
+   "energy": "1429 kJ / 336 kcal",
+   "fat": "0,08 g",
+   "sat": "0,01 g",
+   "carb": "83,68 g",
+   "sugar": "77,55 g",
+   "protein": "0,12 g",
+   "salt": "0,00 g"
+  },
+  "characteristics": {
+   "chemical": {
+    "ITA": "Metalli pesanti: < 0,10 ppm",
+    "FR": "Métaux lourds : < 0,10 ppm",
+    "ENG": "Heavy metals: < 0.10 ppm",
+    "NL": "Zware metalen: < 0,10 ppm"
+   },
+   "micro": {
+    "ITA": "Carica Batterica Totale (CBT): < 10 UFC/g; Muffe e lieviti: assenti; Salmonella: assente in 25 g.",
+    "FR": "Flore aérobie mésophile totale : < 10 UFC/g ; Levures et moisissures : absentes ; Salmonelles : absentes dans 25 g.",
+    "ENG": "Total Bacterial Count (TBC): < 10 CFU/g; Yeasts and moulds: absent; Salmonella: absent in 25 g.",
+    "NL": "Totaal kiemgetal (TBC): < 10 KVE/g; Gisten en schimmels: afwezig; Salmonella: afwezig in 25 g."
+   }
+  }
+ },
+ {
+  "folder": "11_MANDORLE",
+  "title": {
+   "ITA": "Mandorle al Tartufo",
+   "FR": "Amandes à la Truffe",
+   "ENG": "Almonds with Truffle",
+   "NL": "Amandelen met Truffel"
+  },
+  "general": {
+   "ean": "",
+   "typology": {
+    "ITA": "Prodotto a base vegetale, non sterilizzato.",
+    "FR": "Produit d'origine végétale, non stérilisé.",
+    "ENG": "Plant-based product, not sterilised.",
+    "NL": "Plantaardig product, niet gesteriliseerd."
+   },
+   "shelf": {
+    "ITA": "12 mesi",
+    "FR": "12 mois",
+    "ENG": "12 months",
+    "NL": "12 maanden"
+   },
+   "packaging": {
+    "ITA": "Vasetto in latta.",
+    "FR": "Pot en métal (boîte).",
+    "ENG": "Tin jar.",
+    "NL": "Blikken potje."
+   },
+   "labelling": "Reg. UE 1169/2011",
+   "gmo": {
+    "ITA": "Assenti",
+    "FR": "Absents",
+    "ENG": "None",
+    "NL": "Geen"
+   }
+  },
+  "ingredients": {
+   "ingredients": {
+    "ITA": "MANDORLE sgusciate tostate 92,5%; olio di girasole 5%; [sale, tartufo estivo (Tuber aestivum Vitt.) 1%, aromi] 2,5%.",
+    "FR": "AMANDES décortiquées et grillées 92,5 % ; huile de tournesol 5 % ; [sel, truffe d'été (Tuber aestivum Vitt.) 1 %, arômes] 2,5 %.",
+    "ENG": "Toasted shelled ALMONDS 92.5%; sunflower oil 5%; [salt, summer truffle (Tuber aestivum Vitt.) 1%, flavourings] 2.5%.",
+    "NL": "Gepelde geroosterde AMANDELEN 92,5%; zonnebloemolie 5%; [zout, zomertruffel (Tuber aestivum Vitt.) 1%, aroma's] 2,5%."
+   },
+   "allergens": {
+    "ITA": "Contiene FRUTTA A GUSCIO (MANDORLE). Può contenere tracce di: SOIA, SEMI DI SESAMO, SENAPE, altra FRUTTA A GUSCIO e ANIDRIDE SOLFOROSA.",
+    "FR": "Contient des FRUITS À COQUE (AMANDES). Peut contenir des traces de : SOJA, GRAINES DE SÉSAME, MOUTARDE, autres FRUITS À COQUE et ANHYDRIDE SULFUREUX.",
+    "ENG": "Contains NUTS (ALMONDS). May contain traces of: SOY, SESAME SEEDS, MUSTARD, other NUTS and SULPHUR DIOXIDE.",
+    "NL": "Bevat NOTEN (AMANDELEN). Kan sporen bevatten van: SOJA, SESAMZAAD, MOSTERD, andere NOTEN en ZWAVELDIOXIDE."
+   }
+  },
+  "storage": {
+   "instructions": {
+    "ITA": "Conservare in luogo fresco (max 20°C) e asciutto.",
+    "FR": "Conserver dans un endroit frais (max 20°C) et sec.",
+    "ENG": "Store in a cool (max 20°C) and dry place.",
+    "NL": "Bewaren op een koele (max 20°C) en droge plaats."
+   },
+   "method": {
+    "ITA": "Una volta aperto, il prodotto è pronto per essere consumato.",
+    "FR": "Une fois ouvert, le produit est prêt à être consommé.",
+    "ENG": "Once opened, the product is ready to be consumed.",
+    "NL": "Eenmaal geopend is het product klaar voor consumptie."
+   }
+  },
+  "nutrition": {
+   "energy": "2534 kJ / 613 kcal",
+   "fat": "54 g",
+   "sat": "4,2 g",
+   "carb": "7,9 g",
+   "sugar": "4,3 g",
+   "protein": "19 g",
+   "salt": "2,3 g",
+   "fibre": "9,8 g"
+  },
+  "characteristics": {
+   "chemical": {
+    "ITA": "Metalli pesanti: < 0,10 ppm",
+    "FR": "Métaux lourds : < 0,10 ppm",
+    "ENG": "Heavy metals: < 0.10 ppm",
+    "NL": "Zware metalen: < 0,10 ppm"
+   },
+   "micro": {
+    "ITA": "Carica Batterica Totale (CBT): < 10 UFC/g; Coliformi: < 10 UFC/g; Muffe e lieviti: assenti; Anaerobi solfito-riduttori: < 10 UFC/g; Listeria monocytogenes: assente in 25 g; Salmonella: assente in 25 g.",
+    "FR": "Flore aérobie mésophile totale : < 10 UFC/g ; Coliformes : < 10 UFC/g ; Levures et moisissures : absentes ; Anaérobies sulfito-réducteurs : < 10 UFC/g ; Listeria monocytogenes : absente dans 25 g ; Salmonelles : absentes dans 25 g.",
+    "ENG": "Total Bacterial Count (TBC): < 10 CFU/g; Coliforms: < 10 CFU/g; Yeasts and moulds: absent; Sulphite-reducing anaerobes: < 10 CFU/g; Listeria monocytogenes: absent in 25 g; Salmonella: absent in 25 g.",
+    "NL": "Totaal kiemgetal (TBC): < 10 KVE/g; Coliformen: < 10 KVE/g; Gisten en schimmels: afwezig; Sulfietreducerende anaeroben: < 10 KVE/g; Listeria monocytogenes: afwezig in 25 g; Salmonella: afwezig in 25 g."
+   }
+  }
+ },
+ {
+  "folder": "12_NOCI_AL_TARTUFO",
+  "title": {
+   "ITA": "Noci al Tartufo",
+   "FR": "Noix à la Truffe",
+   "ENG": "Walnuts with Truffle",
+   "NL": "Walnoten met Truffel"
+  },
+  "general": {
+   "ean": "",
+   "typology": {
+    "ITA": "Prodotto a base vegetale, non sterilizzato.",
+    "FR": "Produit d'origine végétale, non stérilisé.",
+    "ENG": "Plant-based product, not sterilised.",
+    "NL": "Plantaardig product, niet gesteriliseerd."
+   },
+   "shelf": {
+    "ITA": "12 mesi",
+    "FR": "12 mois",
+    "ENG": "12 months",
+    "NL": "12 maanden"
+   },
+   "packaging": {
+    "ITA": "Vasetto in latta.",
+    "FR": "Pot en métal (boîte).",
+    "ENG": "Tin jar.",
+    "NL": "Blikken potje."
+   },
+   "labelling": "Reg. UE 1169/2011",
+   "gmo": {
+    "ITA": "Assenti",
+    "FR": "Absents",
+    "ENG": "None",
+    "NL": "Geen"
+   }
+  },
+  "ingredients": {
+   "ingredients": {
+    "ITA": "NOCI sgusciate tostate 95%; olio di girasole 3,4%; [sale, tartufo estivo (Tuber aestivum Vitt.) 1%, aromi] 1,6%.",
+    "FR": "NOIX décortiquées et grillées 95 % ; huile de tournesol 3,4 % ; [sel, truffe d'été (Tuber aestivum Vitt.) 1 %, arômes] 1,6 %.",
+    "ENG": "Toasted shelled WALNUTS 95%; sunflower oil 3.4%; [salt, summer truffle (Tuber aestivum Vitt.) 1%, flavourings] 1.6%.",
+    "NL": "Gepelde geroosterde WALNOTEN 95%; zonnebloemolie 3,4%; [zout, zomertruffel (Tuber aestivum Vitt.) 1%, aroma's] 1,6%."
+   },
+   "allergens": {
+    "ITA": "Contiene FRUTTA A GUSCIO (NOCI). Può contenere tracce di: SOIA, SEMI DI SESAMO, SENAPE, altra FRUTTA A GUSCIO e ANIDRIDE SOLFOROSA.",
+    "FR": "Contient des FRUITS À COQUE (NOIX). Peut contenir des traces de : SOJA, GRAINES DE SÉSAME, MOUTARDE, autres FRUITS À COQUE et ANHYDRIDE SULFUREUX.",
+    "ENG": "Contains NUTS (WALNUTS). May contain traces of: SOY, SESAME SEEDS, MUSTARD, other NUTS and SULPHUR DIOXIDE.",
+    "NL": "Bevat NOTEN (WALNOTEN). Kan sporen bevatten van: SOJA, SESAMZAAD, MOSTERD, andere NOTEN en ZWAVELDIOXIDE."
+   }
+  },
+  "storage": {
+   "instructions": {
+    "ITA": "Conservare a temperatura ambiente, al riparo dalla luce e da fonti di calore.",
+    "FR": "Conserver à température ambiante, à l'abri de la lumière et des sources de chaleur.",
+    "ENG": "Store at room temperature, away from light and heat sources.",
+    "NL": "Bewaren op kamertemperatuur, beschermd tegen licht en warmtebronnen."
+   },
+   "method": {
+    "ITA": "Una volta aperto, il prodotto è pronto per essere consumato.",
+    "FR": "Une fois ouvert, le produit est prêt à être consommé.",
+    "ENG": "Once opened, the product is ready to be consumed.",
+    "NL": "Eenmaal geopend is het product klaar voor consumptie."
+   }
+  },
+  "nutrition": {
+   "energy": "2932 kJ / 710 kcal",
+   "fat": "65 g",
+   "sat": "6,0 g",
+   "carb": "14 g",
+   "sugar": "3,0 g",
+   "protein": "14 g",
+   "salt": "1,5 g",
+   "fibre": "6,4 g"
+  },
+  "characteristics": {
+   "chemical": {
+    "ITA": "Metalli pesanti: < 0,10 ppm",
+    "FR": "Métaux lourds : < 0,10 ppm",
+    "ENG": "Heavy metals: < 0.10 ppm",
+    "NL": "Zware metalen: < 0,10 ppm"
+   },
+   "micro": {
+    "ITA": "Carica Batterica Totale (CBT): < 10 UFC/g; Coliformi: < 10 UFC/g; Muffe e lieviti: assenti; Anaerobi solfito-riduttori: < 10 UFC/g; Listeria monocytogenes: assente in 25 g; Salmonella: assente in 25 g.",
+    "FR": "Flore aérobie mésophile totale : < 10 UFC/g ; Coliformes : < 10 UFC/g ; Levures et moisissures : absentes ; Anaérobies sulfito-réducteurs : < 10 UFC/g ; Listeria monocytogenes : absente dans 25 g ; Salmonelles : absentes dans 25 g.",
+    "ENG": "Total Bacterial Count (TBC): < 10 CFU/g; Coliforms: < 10 CFU/g; Yeasts and moulds: absent; Sulphite-reducing anaerobes: < 10 CFU/g; Listeria monocytogenes: absent in 25 g; Salmonella: absent in 25 g.",
+    "NL": "Totaal kiemgetal (TBC): < 10 KVE/g; Coliformen: < 10 KVE/g; Gisten en schimmels: afwezig; Sulfietreducerende anaeroben: < 10 KVE/g; Listeria monocytogenes: afwezig in 25 g; Salmonella: afwezig in 25 g."
+   }
+  }
+ }
+]

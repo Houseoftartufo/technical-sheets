@@ -1,0 +1,80 @@
+[
+{
+  "folder": "01_ACETO_BALSAMICO_SPRAY",
+  "title": {
+    "ITA": "Aceto Balsamico di Modena all'Aroma di Tartufo",
+    "FR": "Vinaigre Balsamique de Modène à l'Arôme de Truffe",
+    "ENG": "Modena Balsamic Vinegar with Truffle Flavour",
+    "NL": "Balsamicoazijn van Modena met Truffelaroma"
+  },
+  "general": {
+    "ean": "",
+    "typology": {
+      "ITA": "Prodotto a base vegetale, non sterilizzato.",
+      "FR": "Produit d'origine végétale, non stérilisé.",
+      "ENG": "Plant-based product, not sterilised.",
+      "NL": "Plantaardig product, niet gesteriliseerd."
+    },
+    "shelf": {"ITA": "18 mesi", "FR": "18 mois", "ENG": "18 months", "NL": "18 maanden"},
+    "packaging": {
+      "ITA": "Flacone in vetro con erogatore spray, 100 ml.",
+      "FR": "Flacon en verre avec spray, 100 ml.",
+      "ENG": "Glass bottle with spray dispenser, 100 ml.",
+      "NL": "Glazen fles met sprayverstuiver, 100 ml."
+    },
+    "labelling": "Reg. UE 1169/2011",
+    "gmo": {"ITA": "Assenti", "FR": "Absents", "ENG": "None", "NL": "Geen"}
+  },
+  "ingredients": {
+    "ingredients": {
+      "ITA": "Mosto d'uva concentrato, aceto balsamico di Modena IGP (aceto di vino, mosto d'uva concentrato, colorante E150d), aceto di vino, colorante E150d, aroma. Contiene SOLFITI.",
+      "FR": "Moût de raisin concentré, vinaigre balsamique de Modène IGP (vinaigre de vin, moût de raisin concentré, colorant E150d), vinaigre de vin, colorant E150d, arôme. Contient des SULFITES.",
+      "ENG": "Concentrated grape must, Balsamic Vinegar of Modena PGI (wine vinegar, concentrated grape must, colour E150d), wine vinegar, colour E150d, flavouring. Contains SULPHITES.",
+      "NL": "Geconcentreerde druivenmost, balsamicoazijn van Modena BGA (wijnazijn, geconcentreerde druivenmost, kleurstof E150d), wijnazijn, kleurstof E150d, aroma. Bevat SULFIETEN."
+    },
+    "allergens": {
+      "ITA": "Oltre a quanto dichiarato in MAIUSCOLO nel paragrafo precedente, il prodotto non contiene ulteriori ingredienti ad azione allergizzante.",
+      "FR": "Hormis les allergènes indiqués en MAJUSCULES dans le paragraphe précédent, le produit ne contient aucun autre ingrédient allergène.",
+      "ENG": "Apart from the allergens stated in CAPITAL LETTERS in the paragraph above, the product does not contain any other allergenic ingredients.",
+      "NL": "Naast de in HOOFDLETTERS vermelde allergenen in de vorige alinea bevat het product geen andere allergene ingrediënten."
+    }
+  },
+  "storage": {
+    "instructions": {
+      "ITA": "Conservare a temperatura ambiente, al riparo dalla luce e da fonti di calore. Dopo l'apertura, conservare il prodotto nella confezione originale, al riparo dalla luce diretta e dal calore.",
+      "FR": "Conserver à température ambiante, à l'abri de la lumière et des sources de chaleur. Après ouverture, conserver le produit dans son emballage d'origine, à l'abri de la lumière directe et de la chaleur.",
+      "ENG": "Store at room temperature, away from light and heat sources. After opening, keep the product in its original packaging, away from direct light and heat.",
+      "NL": "Bewaren op kamertemperatuur, beschermd tegen licht en warmtebronnen. Na opening het product in de originele verpakking bewaren, beschermd tegen direct licht en warmte."
+    },
+    "method": {
+      "ITA": "Una volta aperto, il prodotto è pronto per essere utilizzato.",
+      "FR": "Une fois ouvert, le produit est prêt à l'emploi.",
+      "ENG": "Once opened, the product is ready to use.",
+      "NL": "Eenmaal geopend is het product klaar voor gebruik."
+    }
+  },
+  "nutrition": {
+    "energy": "959 kJ / 226 kcal",
+    "fat": "0 g",
+    "sat": "0 g",
+    "carb": "54,91 g",
+    "sugar": "46,92 g",
+    "protein": "1,50 g",
+    "salt": "0,25 g"
+  },
+  "characteristics": {
+    "chemical": {
+      "ITA": "Metalli pesanti: < 0,10 ppm",
+      "FR": "Métaux lourds : < 0,10 ppm",
+      "ENG": "Heavy metals: < 0.10 ppm",
+      "NL": "Zware metalen: < 0,10 ppm"
+    },
+    "micro": {
+      "ITA": "Carica Batterica Totale (CBT): < 10 UFC/g; Muffe e lieviti: assenti.",
+      "FR": "Flore aérobie mésophile totale : < 10 UFC/g ; Levures et moisissures : absentes.",
+      "ENG": "Total Bacterial Count (TBC): < 10 CFU/g; Yeasts and moulds: absent.",
+      "NL": "Totaal kiemgetal (TBC): < 10 KVE/g; Gisten en schimmels: afwezig."
+    }
+  }
+}
+]
