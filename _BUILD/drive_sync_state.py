@@ -59,8 +59,14 @@ def source_fingerprint(item):
     return hashlib.sha256(json.dumps(source, sort_keys=True).encode("utf-8")).hexdigest()
 
 
-def product_manifest_entry(item, folder):
-    return {"fingerprint": source_fingerprint(item), "folder": folder, "name": item.get("name", "")}
+def product_manifest_entry(item, folder, title):
+    languages = ("ITA", "FR", "ENG", "NL", "DE")
+    return {
+        "fingerprint": source_fingerprint(item),
+        "folder": folder,
+        "name": item.get("name", ""),
+        "title": {language: title.get(language, "") for language in languages},
+    }
 
 
 def unchanged_source_ids(sources, manifest):
@@ -95,13 +101,51 @@ def removed_product_folders(previous, current_source_ids, updated_entries=None):
     return sorted(stale - retained)
 
 
+def reconcile_sources(pending_sources, active_sources, manifest):
+    """Reconcile the intake queue and active originals without treating a move as deletion."""
+    pending = {item["id"]: item for item in pending_sources}
+    active = {item["id"]: item for item in active_sources}
+    overlapping = set(pending) & set(active)
+    if overlapping:
+        raise ValueError("Drive source IDs appear in both intake and processed folders: "
+                         + ", ".join(sorted(overlapping)))
+
+    previous = manifest.get("products", {}) if isinstance(manifest, dict) else {}
+    current_ids = set(pending) | set(active)
+    changed_pending, changed_active, unchanged = [], [], []
+    for source_id in sorted(current_ids):
+        item = pending.get(source_id) or active[source_id]
+        entry = previous.get(source_id, {})
+        if entry.get("fingerprint") == source_fingerprint(item):
+            unchanged.append(source_id)
+        elif source_id in pending:
+            changed_pending.append(item)
+        else:
+            changed_active.append(item)
+
+    removed_source_ids = sorted(set(previous) - current_ids)
+    next_products = {source_id: previous[source_id] for source_id in sorted(current_ids)
+                     if source_id in previous}
+    removed_folders = removed_product_folders(manifest, current_ids)
+    return {
+        "changed_pending": changed_pending,
+        "changed_active": changed_active,
+        "unchanged": unchanged,
+        "removed_source_ids": removed_source_ids,
+        "removed_folders": removed_folders,
+        "next_products": next_products,
+    }
+
+
 def load_manifest(path):
     if not path.exists():
-        return {"version": 1, "products": {}, "legacy_folders": []}
+        return {"version": 2, "products": {}, "legacy_folders": []}
     value = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(value, list):
-        return {"version": 1, "products": {}, "legacy_folders": sorted(set(value))}
+        return {"version": 2, "products": {}, "legacy_folders": sorted(set(value))}
     if not isinstance(value, dict) or not isinstance(value.get("products", {}), dict):
         raise ValueError("drive_manifest.json has an unsupported format")
-    return {"version": 1, "products": value.get("products", {}),
+    if value.get("version", 1) not in (1, 2):
+        raise ValueError("drive_manifest.json has an unsupported version")
+    return {"version": 2, "products": value.get("products", {}),
             "legacy_folders": value.get("legacy_folders", [])}

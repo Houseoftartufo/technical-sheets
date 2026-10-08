@@ -140,9 +140,63 @@ class DriveSyncStateTest(unittest.TestCase):
     def test_unchanged_sources_are_skipped_but_modified_or_new_sources_are_processed(self):
         a = {"id": "a", "name": "a.pdf", "md5Checksum": "x"}
         b = {"id": "b", "name": "b.pdf", "md5Checksum": "y"}
-        manifest = {"products": {"a": product_manifest_entry(a, "28_A")}}
+        manifest = {"products": {"a": product_manifest_entry(a, "28_A", {"ITA": "A"})}}
         self.assertEqual(unchanged_source_ids([a, b], manifest), {"a"})
         self.assertEqual(unchanged_source_ids([b], manifest), set())
+
+    def test_moving_an_unchanged_source_from_intake_to_processed_keeps_its_product(self):
+        from drive_sync_state import reconcile_sources
+
+        source = {"id": "a", "name": "a.pdf", "md5Checksum": "x"}
+        title = {"ITA": "A", "FR": "A FR", "ENG": "A EN", "NL": "A NL", "DE": "A DE"}
+        entry = product_manifest_entry(source, "28_A", title)
+        result = reconcile_sources([source], [], {"version": 1, "products": {"a": entry}})
+
+        self.assertEqual(result["unchanged"], ["a"])
+        self.assertEqual(result["removed_source_ids"], [])
+        self.assertEqual(result["removed_folders"], [])
+        self.assertEqual(result["next_products"]["a"], entry)
+
+    def test_missing_processed_source_removes_only_its_owned_product(self):
+        from drive_sync_state import reconcile_sources
+
+        removed = {"id": "old", "name": "old.pdf", "md5Checksum": "x"}
+        added = {"id": "new", "name": "new.pdf", "md5Checksum": "y"}
+        entry = product_manifest_entry(removed, "28_OLD", {"ITA": "Old"})
+        result = reconcile_sources([added], [], {"version": 2, "products": {"old": entry}})
+
+        self.assertEqual(result["removed_source_ids"], ["old"])
+        self.assertEqual(result["removed_folders"], ["28_OLD"])
+        self.assertEqual(result["changed_pending"], [added])
+        self.assertEqual(result["next_products"], {})
+
+    def test_changed_active_fingerprint_schedules_update_without_deactivating_old_product(self):
+        from drive_sync_state import reconcile_sources
+
+        old = {"id": "a", "name": "a.pdf", "md5Checksum": "old"}
+        updated = {"id": "a", "name": "a.pdf", "md5Checksum": "new"}
+        entry = product_manifest_entry(old, "28_A", {"ITA": "A"})
+        result = reconcile_sources([], [updated], {"version": 2, "products": {"a": entry}})
+
+        self.assertEqual(result["changed_active"], [updated])
+        self.assertEqual(result["removed_source_ids"], [])
+        self.assertEqual(result["removed_folders"], [])
+        self.assertEqual(result["next_products"]["a"], entry)
+
+    def test_shared_product_folder_is_not_scheduled_for_removal_while_still_active(self):
+        from drive_sync_state import reconcile_sources
+
+        removed = {"id": "gone", "name": "gone.pdf", "md5Checksum": "x"}
+        active = {"id": "kept", "name": "kept.pdf", "md5Checksum": "y"}
+        entries = {
+            "gone": product_manifest_entry(removed, "28_SHARED", {"ITA": "Shared"}),
+            "kept": product_manifest_entry(active, "28_SHARED", {"ITA": "Shared"}),
+        }
+        result = reconcile_sources([], [active], {"version": 2, "products": entries})
+
+        self.assertEqual(result["removed_source_ids"], ["gone"])
+        self.assertEqual(result["removed_folders"], [])
+        self.assertEqual(sorted(result["next_products"]), ["kept"])
 
 
 if __name__ == "__main__":
