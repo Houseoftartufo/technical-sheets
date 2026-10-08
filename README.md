@@ -16,7 +16,7 @@ ricostruite dai testi originali italiani Sassone con traduzioni B2B e dati verba
 - Install Command: lasciare vuoto
 
 ## Note
-- Design originale invariato (logo HOT, colori, layout).
+- Nuovo logo House of Tartufo in PNG trasparente, senza riquadro o sfondo; colori e struttura delle schede invariati.
 - Valori nutrizionali trascritti verbatim dalle schede originali (ogni decimale).
 - Correzioni allergeni/titoli vs originale: vedi _BUILD/MAPPATURA.md.
 - Codice EAN: placeholder originale Sassone (80582 6513), da sostituire con EAN reali.

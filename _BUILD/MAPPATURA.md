@@ -5,7 +5,7 @@
 2. Titoli fedeli al termine merceologico originale (Crema, Salsa, Burro/Condimento, Olio, Sale, Carpaccio...), tradotti correttamente nelle 5 lingue.
 3. Valori nutrizionali VERBATIM, ogni decimale/millesimo, virgola IT/FR/NL, punto EN.
 4. Allergeni: CORRETTI dove l'originale aveva errori copia-incolla (02 Anacardi e 11 Mandorle: "FRUTTA A GUSCIO" non "ARACHIDI").
-5. Una sola lingua per file; sezioni pulite; design CSS invariato (logo HOT, colori truffle/oro).
+5. Una sola lingua per file; sezioni pulite; nuovo logo House of Tartufo trasparente senza riquadro; colori truffle/oro invariati.
 6. Lingue: ITA, FR, ENG, NL, DE.
 7. Il tedesco usa terminologia tecnica B2B standard UE, virgola decimale e allergeni in maiuscolo.
 
