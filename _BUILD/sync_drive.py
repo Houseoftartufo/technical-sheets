@@ -20,6 +20,7 @@ from i18n import DATA_FILES
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / "_BUILD"
 FOLDER_ID = os.environ.get("DRIVE_SOURCE_FOLDER_ID") or "1Y1qgl2rih8Ikbjf6ch4CgG5Qtwg6k6hS"
+CATALOG_ID = os.environ.get("DRIVE_CATALOG_FOLDER_ID") or "1vEyctBT3z9F5-hFM-DeTWEsjaY2I8drb"
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 SUPPORTED = {"application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"}
 
@@ -29,6 +30,9 @@ def drive_client():
     if not raw:
         raise RuntimeError("GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON is not configured")
     credentials = service_account.Credentials.from_service_account_info(json.loads(raw), scopes=SCOPES)
+    impersonated_user = os.environ.get("GOOGLE_DRIVE_IMPERSONATED_USER")
+    if impersonated_user:
+        credentials = credentials.with_subject(impersonated_user)
     return build("drive", "v3", credentials=credentials, cache_discovery=False)
 
 
@@ -121,6 +125,13 @@ def extract(client, item, content):
 
 def main():
     drive = drive_client()
+    catalog = drive.files().get(fileId=CATALOG_ID, fields="id,name,driveId").execute()
+    if not catalog.get("driveId") and not os.environ.get("GOOGLE_DRIVE_IMPERSONATED_USER"):
+        raise SystemExit(
+            "The catalog folder is in My Drive, but service accounts have no Drive storage quota. "
+            "Use a Shared Drive or configure Google Workspace domain-wide delegation and set "
+            "GOOGLE_DRIVE_IMPERSONATED_USER before importing supplier documents."
+        )
     client = OpenAI()
     errors, imported = [], {}
     existing = set()
