@@ -123,6 +123,8 @@ class PublishDriveTests(unittest.TestCase):
         self.assertEqual(len(product_files),1)
         self.assertEqual(next(x for x in drive.items if x["id"]=="source")["parents"],["processed"])
         self.assertEqual(second["manifest_file_id"],first["manifest_file_id"])
+        manifest_writes=[event for event in drive.events if event[1]==".technical-sheets-manifest.json"]
+        self.assertEqual(len(manifest_writes),1)
 
     def test_manifest_is_not_written_if_any_upsert_fails(self):
         class FailingDrive(FakeDrive):

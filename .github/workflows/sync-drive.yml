@@ -33,7 +33,7 @@ jobs:
       - name: Install importer and PDF dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libharfbuzz-subset0 poppler-utils
+          sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libharfbuzz-subset0 poppler-utils libreoffice-writer
           pip install -r requirements-drive.txt
           npm install --global vercel@48.1.0
       - name: Prepare sync run
@@ -47,6 +47,18 @@ jobs:
         run: |
           mkdir -p "$DRIVE_RUN_DIR"
           python _BUILD/sync_drive.py
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          run=Path(os.environ["DRIVE_RUN_DIR"])
+          plan=json.loads((run/"drive_sync_plan.json").read_text(encoding="utf-8"))
+          manifest_id=(run/"manifest_file_id.txt").read_text(encoding="utf-8").strip()
+          missing_titles=any(not all(entry.get("title",{}).get(lang) for lang in ("ITA","FR","ENG","NL","DE")) for entry in plan["next_manifest"]["products"].values())
+          dirty=bool(plan["imported"] or plan["removed_folders"] or not manifest_id or missing_titles or os.environ["GITHUB_EVENT_NAME"]=="push")
+          with open(os.environ["GITHUB_OUTPUT"],"a",encoding="utf-8") as output: output.write(f"has_changes={str(dirty).lower()}\n")
+          report=json.loads((run/"drive_sync_report.json").read_text(encoding="utf-8")); report["catalog_changed"]=dirty
+          (run/"drive_sync_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
+          PY
       - name: Generate changed technical sheets with official engine
         run: |
           mkdir -p "$DRIVE_GENERATED_DIR"
@@ -75,12 +87,14 @@ jobs:
           DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID || secrets.DRIVE_CATALOG_FOLDER_ID }}
         run: python _BUILD/build_site_bundle.py
       - name: Link Vercel project
+        if: steps.prepare.outputs.has_changes == 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
         run: vercel link --yes --project "$VERCEL_PROJECT_ID" --scope "$VERCEL_ORG_ID" --token "$VERCEL_TOKEN"
       - name: Deploy Vercel preview
+        if: steps.prepare.outputs.has_changes == 'true'
         id: preview
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -95,6 +109,8 @@ jobs:
           path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
           PY
       - name: Smoke-test preview
+        id: smoke
+        if: steps.prepare.outputs.has_changes == 'true'
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.url }}
           DRIVE_RUN_DIR: ${{ runner.temp }}/technical-sheets-run
@@ -114,6 +130,7 @@ jobs:
                   check(f"{folder}/{folder}_{lang}.pdf")
           PY
       - name: Deploy Vercel production
+        if: steps.prepare.outputs.has_changes == 'true'
         id: production
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -129,6 +146,8 @@ jobs:
           path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
           PY
       - name: Finalize Drive state
+        id: finalize
+        if: success()
         env:
           GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
           GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
@@ -137,6 +156,29 @@ jobs:
           DRIVE_RUN_DIR: ${{ runner.temp }}/technical-sheets-run
           DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
         run: python _BUILD/finalize_drive_sync.py
+      - name: Record workflow outcome
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          PREVIEW_STATUS: ${{ steps.preview.outcome }}
+          SMOKE_STATUS: ${{ steps.smoke.outcome }}
+          PRODUCTION_STATUS: ${{ steps.production.outcome }}
+          DRIVE_STATUS: ${{ steps.finalize.outcome }}
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+          PRODUCTION_URL: ${{ steps.production.outputs.url }}
+        run: |
+          mkdir -p "$DRIVE_RUN_DIR"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          path=Path(os.environ["DRIVE_RUN_DIR"])/"drive_sync_report.json"
+          report=json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"status":"failed_before_prepare"}
+          report["workflow_status"]=os.environ["JOB_STATUS"]
+          report["stages"]={"preview":os.environ.get("PREVIEW_STATUS"),"smoke_test":os.environ.get("SMOKE_STATUS"),"production":os.environ.get("PRODUCTION_STATUS"),"drive_finalize":os.environ.get("DRIVE_STATUS")}
+          if os.environ.get("PREVIEW_URL"): report["preview_deployment_url"]=os.environ["PREVIEW_URL"]
+          if os.environ.get("PRODUCTION_URL"): report["production_deployment_url"]=os.environ["PRODUCTION_URL"]
+          path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
+          PY
       - name: Save Drive sync report
         if: always()
         uses: actions/upload-artifact@v4

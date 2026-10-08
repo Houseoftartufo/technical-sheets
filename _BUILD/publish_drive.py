@@ -191,7 +191,10 @@ def apply(drive, plan, generated_root, catalog_id, processed_id, manifest_file_i
                              fields="id,parents", supportsAllDrives=True).execute()
         moved.append(source_id)
 
-    saved_manifest_id = _upsert_manifest(drive, catalog_id, next_manifest, existing_manifest_id)
+    if existing_manifest_id and previous_manifest == next_manifest:
+        saved_manifest_id = existing_manifest_id
+    else:
+        saved_manifest_id = _upsert_manifest(drive, catalog_id, next_manifest, existing_manifest_id)
     return {"published_to_drive": published, "trashed": trashed, "moved_source_ids": moved,
             "manifest_file_id": saved_manifest_id, "active_product_folders": sorted(active_folders)}
 
