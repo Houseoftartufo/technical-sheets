@@ -1,5 +1,5 @@
-import json,sys
-sys.path.insert(0,"/tmp/build")
+import json
+from pathlib import Path
 from common import *
 EAN=""
 stor_riso=L("Conservare a temperatura ambiente, al riparo dalla luce e da fonti di calore. Dopo l'apertura, conservare il prodotto nella confezione originale, al riparo dalla luce diretta e dal calore, in un luogo ben ventilato.",
@@ -81,5 +81,5 @@ P.append(prod("17_RISO_TARTUFO_ESTIVO_G_170_1000___170G",
  ALL["none"], stor_riso, USE["ready"],
  {"energy":"1463 kJ / 345 kcal","fat":"1,62 g","sat":"0,52 g","carb":"74,90 g","sugar":"0,60 g","protein":"7,15 g","salt":"0,00 g"},
  micro=micro_drygoods))
-json.dump(P,open("/tmp/build/blockC.json","w"),ensure_ascii=False,indent=1)
+json.dump(P,open(Path(__file__).with_suffix(".json"),"w",encoding="utf-8"),ensure_ascii=False,indent=1)
 print("blockC.json:",len(P))

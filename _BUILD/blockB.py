@@ -1,5 +1,5 @@
-import json,sys
-sys.path.insert(0,"/tmp/build")
+import json
+from pathlib import Path
 from common import *
 EAN=""
 # typologie extra
@@ -85,5 +85,5 @@ P.append(prod("12_NOCI_AL_TARTUFO",
  nuts("NOCI","NOIX","WALNUTS","WALNOTEN"), STOR["amb"], USE["consume"],
  {"energy":"2932 kJ / 710 kcal","fat":"65 g","sat":"6,0 g","carb":"14 g","sugar":"3,0 g","protein":"14 g","salt":"1,5 g","fibre":"6,4 g"},
  micro=MICRO["full"]))
-json.dump(P,open("/tmp/build/blockB.json","w"),ensure_ascii=False,indent=1)
+json.dump(P,open(Path(__file__).with_suffix(".json"),"w",encoding="utf-8"),ensure_ascii=False,indent=1)
 print("blockB.json:",len(P))
