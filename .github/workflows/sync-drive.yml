@@ -26,6 +26,7 @@ jobs:
       - name: Read, translate and validate supplier sheets
         env:
           GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
           DRIVE_SOURCE_FOLDER_ID: ${{ secrets.DRIVE_SOURCE_FOLDER_ID }}
           DRIVE_CATALOG_FOLDER_ID: ${{ secrets.DRIVE_CATALOG_FOLDER_ID }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -47,6 +48,7 @@ jobs:
       - name: Publish generated files to Google Drive
         env:
           GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
           DRIVE_CATALOG_FOLDER_ID: ${{ secrets.DRIVE_CATALOG_FOLDER_ID }}
           DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
         run: python _BUILD/publish_drive.py
