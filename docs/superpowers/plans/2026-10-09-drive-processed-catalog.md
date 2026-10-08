@@ -51,7 +51,7 @@
 ### Task 2: Read two Drive folders and stage a safe synchronization result
 
 **Files:**
-- Modify: _BUILD/sync_drive.py, _BUILD/drive_sync_state.py
+- Modify: _BUILD/sync_drive.py, _BUILD/drive_sync_state.py, _BUILD/drive_schema.py
 - Test: tests/test_sync_drive.py (create)
 
 **Interfaces:**
@@ -59,9 +59,9 @@
 - Produces: `ensure_processed_folder(drive, intake_id: str) -> dict` that finds or creates sibling ELABORATE idempotently; `prepare(drive, source_id: str, processed_id: str, catalog_id: str) -> dict` scans both folders, extracts only changed supported sources and writes a run plan/report in the runner temp directory. The plan contains changed product JSON, removals, pending file IDs to move after success, next manifest, unchanged active IDs, and per-file errors.
 - Do not write the authoritative manifest or move intake files in prepare.
 
-- [ ] **Step 1: Write fake-Drive tests** for sibling-folder discovery/creation, scanning only direct children in the two configured folders, retaining an intake file after extraction/validation failure, rejecting missing required field values while allowing the intentionally blank EAN, and no remote manifest/source mutation during prepare.
+- [ ] **Step 1: Write fake-Drive tests** for sibling-folder discovery/creation, scanning only direct children in the two configured folders, retaining an intake file after extraction/validation failure, rejecting missing required field values while allowing the intentionally blank EAN, blocking product-folder collisions, reporting unsupported files without scheduling removals, and no remote manifest/source mutation during prepare.
 - [ ] **Step 2: Run** `python -m unittest tests.test_sync_drive -v`; confirm failures identify the new interfaces and required behaviors.
-- [ ] **Step 3: Implement** folder discovery using the intake folder's parent, two-folder listing with Shared Drive flags, and plan preparation using Task 1. Unsupported MIME types remain ignored and cannot cause removals.
+- [ ] **Step 3: Implement** folder discovery using the intake folder's parent, two-folder listing with Shared Drive flags, and plan preparation using Task 1. New unsupported MIME files are reported as blocking errors; they never enter the active-ID set or trigger removals.
 - [ ] **Step 4: Run** `python -m unittest tests.test_sync_drive -v`; confirm mocked API requests and failure reporting pass.
 
 ### Task 3: Build an index from static and managed product metadata
