@@ -1,1 +1,11 @@
-[]
+{
+  "version": 1,
+  "products": {
+    "1BZ6W0oUltspNqWGoey_5V8x90fUANi9d": {
+      "fingerprint": "b8b72b40572fd5735da269f40a9fc431d0b4bfc45cab384d4fc86c3c845387ef",
+      "folder": "28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO",
+      "name": "Carpaccio di tartufo estivo - scheda tecnica.pdf"
+    }
+  },
+  "legacy_folders": []
+}
