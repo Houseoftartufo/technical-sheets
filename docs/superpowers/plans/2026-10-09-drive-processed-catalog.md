@@ -56,7 +56,7 @@
 
 **Interfaces:**
 - Consumes: `reconcile_sources` from Task 1; current Drive variables and service-account credential.
-- Produces: `ensure_processed_folder(drive, intake_id: str) -> dict` that finds or creates sibling ELABORATE idempotently; `prepare(drive, source_id: str, processed_id: str, catalog_id: str) -> dict` scans both folders, extracts only changed supported sources and writes a run plan/report in the runner temp directory. The plan contains changed product JSON, removals, pending file IDs to move after success, next manifest, unchanged active IDs, and per-file errors.
+- Produces: `ensure_processed_folder(drive, intake_id: str) -> dict` that finds or creates sibling ELABORATE idempotently; `prepare(drive, source_id: str, processed_id: str, manifest: dict, client: object, build_dir: Path = BUILD, run_dir: Path | None = None) -> dict` scans both folders, extracts only changed supported sources and writes a run plan/report in the runner temp directory. The plan contains changed product JSON, removals, pending file IDs to move after success, next manifest, active localized product titles, unchanged active IDs, and per-file errors.
 - Do not write the authoritative manifest or move intake files in prepare.
 
 - [ ] **Step 1: Write fake-Drive tests** for sibling-folder discovery/creation, scanning only direct children in the two configured folders, retaining an intake file after extraction/validation failure, rejecting missing required field values while allowing the intentionally blank EAN, blocking product-folder collisions, reporting unsupported files without scheduling removals, and no remote manifest/source mutation during prepare.
