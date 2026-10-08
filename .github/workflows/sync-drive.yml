@@ -1,0 +1,56 @@
+name: Sync supplier technical sheets
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install importer dependencies
+        run: pip install google-api-python-client google-auth openai
+      - name: Read, translate and validate supplier sheets
+        env:
+          GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
+          DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID }}
+          DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python _BUILD/sync_drive.py
+      - name: Generate official HTML and PDF files
+        env:
+          DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
+        run: |
+          mkdir -p "$DRIVE_GENERATED_DIR"
+          python _BUILD/engine.py _BUILD/product_overrides.json "$DRIVE_GENERATED_DIR" 06/06/2026
+          git diff --check
+          expected_files=$(python -c 'import json; print(len(json.load(open("_BUILD/product_overrides.json", encoding="utf-8"))) * 10)')
+          actual_files=$(find "$DRIVE_GENERATED_DIR" -type f \( -name '*.html' -o -name '*.pdf' \) | wc -l)
+          test "$actual_files" -eq "$expected_files"
+          for pdf in $(find "$DRIVE_GENERATED_DIR" -name '*.pdf'); do
+            pages=$(pdfinfo "$pdf" | awk '/^Pages:/ {print $2}')
+            test -n "$pages" && test "$pages" -ge 1
+          done
+      - name: Publish generated files to Google Drive
+        env:
+          GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
+          DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID }}
+          DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
+        run: python _BUILD/publish_drive.py
+      - name: Publish generated catalog
+        run: |
+          git config user.name "houseoftartufo-drive-sync"
+          git config user.email "admin@houseoftartufo.com"
+          git add _BUILD/drive_manifest.json
+          git diff --cached --quiet || git commit -m "chore: sync supplier technical sheets"
+          git push origin main
