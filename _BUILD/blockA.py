@@ -1,5 +1,5 @@
-import json,sys
-sys.path.insert(0,"/tmp/build")
+import json
+from pathlib import Path
 from common import *
 EAN=""
 P=[]
@@ -72,5 +72,5 @@ P.append(prod("07_CREMA_ALLACETO_BALSAMICO_AL_TARTUFO",
  ALL["none_extra"], STOR["amb_fridge"], USE["ready"],
  {"energy":"942 kJ / 222 kcal","fat":"0,41 g","sat":"0,06 g","carb":"53,09 g","sugar":"45,37 g","protein":"1,46 g","salt":"0,24 g"},
  micro=MICRO["basic"]))
-json.dump(P,open("/tmp/build/blockA.json","w"),ensure_ascii=False,indent=1)
+json.dump(P,open(Path(__file__).with_suffix(".json"),"w",encoding="utf-8"),ensure_ascii=False,indent=1)
 print("blockA.json:",len(P),"prodotti")

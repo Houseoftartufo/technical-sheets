@@ -1,56 +1,60 @@
 # -*- coding: utf-8 -*-
-import base64, os, json, sys
+import base64, os, sys
+from pathlib import Path
 
-LOGO_PATH = "/sessions/fervent-kind-rubin/mnt/Schede techniche Sassone - Copia/HOUSE_OF_TARTUFO_PREMIUM/HOT_logo_Full_Black.svg"
+from i18n import LANGS, load_products_file, localized
+from pdf_backend import write_pdf
+
+
+ROOT = Path(__file__).resolve().parents[1]
+LOGO_PATH = ROOT / "HOT_logo_Full_Black.svg"
 with open(LOGO_PATH, "rb") as f:
     LOGO_B64 = base64.b64encode(f.read()).decode()
 
-LANGS = ["ITA", "FR", "ENG", "NL"]
-
 L = {
-    "html_lang": {"ITA": "it", "FR": "fr", "ENG": "en", "NL": "nl"},
+    "html_lang": {"ITA": "it", "FR": "fr", "ENG": "en", "NL": "nl", "DE": "de"},
     "sheet_type": {"ITA": "SCHEDA TECNICA PRODOTTO", "FR": "FICHE TECHNIQUE PRODUIT",
-                   "ENG": "PRODUCT TECHNICAL DATA SHEET", "NL": "TECHNISCHE PRODUCTFICHE"},
-    "finished": {"ITA": "PRODOTTO FINITO", "FR": "PRODUIT FINI", "ENG": "FINISHED PRODUCT", "NL": "EINDPRODUCT"},
+                   "ENG": "PRODUCT TECHNICAL DATA SHEET", "NL": "TECHNISCHE PRODUCTFICHE", "DE": "TECHNISCHES PRODUKTDATENBLATT"},
+    "finished": {"ITA": "PRODOTTO FINITO", "FR": "PRODUIT FINI", "ENG": "FINISHED PRODUCT", "NL": "EINDPRODUCT", "DE": "FERTIGPRODUKT"},
     "sec_general": {"ITA": "Informazioni Generali", "FR": "Informations Générales",
-                    "ENG": "General Information", "NL": "Algemene Informatie"},
+                    "ENG": "General Information", "NL": "Algemene Informatie", "DE": "Allgemeine Informationen"},
     "sec_ingr": {"ITA": "Ingredienti e Allergeni", "FR": "Ingrédients et Allergènes",
-                 "ENG": "Ingredients & Allergens", "NL": "Ingredienten & Allergenen"},
+                 "ENG": "Ingredients & Allergens", "NL": "Ingredienten & Allergenen", "DE": "Zutaten und Allergene"},
     "sec_storage": {"ITA": "Conservazione e Modalità d'Uso", "FR": "Conservation et Mode d'Emploi",
-                    "ENG": "Storage & Method of Use", "NL": "Bewaring & Gebruiksaanwijzing"},
+                    "ENG": "Storage & Method of Use", "NL": "Bewaring & Gebruiksaanwijzing", "DE": "Lagerung und Verwendung"},
     "sec_nutri": {"ITA": "Valori Nutrizionali Medi (per 100 g)", "FR": "Valeurs Nutritionnelles Moyennes (pour 100 g)",
-                  "ENG": "Average Nutritional Values (per 100 g)", "NL": "Gemiddelde Voedingswaarden (per 100 g)"},
+                  "ENG": "Average Nutritional Values (per 100 g)", "NL": "Gemiddelde Voedingswaarden (per 100 g)", "DE": "Durchschnittliche Nährwerte (pro 100 g)"},
     "sec_charact": {"ITA": "Caratteristiche Chimiche e Microbiologiche", "FR": "Caractéristiques Chimiques et Microbiologiques",
-                    "ENG": "Chemical & Microbiological Characteristics", "NL": "Chemische & Microbiologische Kenmerken"},
-    "lbl_ean": {"ITA": "Codice EAN", "FR": "Code EAN", "ENG": "EAN Code", "NL": "EAN-code"},
-    "lbl_typ": {"ITA": "Tipologia", "FR": "Typologie", "ENG": "Typology", "NL": "Typologie"},
-    "lbl_label": {"ITA": "Etichettatura", "FR": "Étiquetage", "ENG": "Labelling", "NL": "Etikettering"},
-    "lbl_gmo": {"ITA": "OGM e Irraggiamento", "FR": "OGM et Irradiation", "ENG": "GMO & Irradiation", "NL": "GGO & Bestraling"},
-    "lbl_shelf": {"ITA": "Shelf Life", "FR": "Durée de Conservation", "ENG": "Shelf Life", "NL": "Houdbaarheid"},
-    "lbl_pack": {"ITA": "Confezione", "FR": "Conditionnement", "ENG": "Packaging", "NL": "Verpakking"},
-    "lbl_ingr": {"ITA": "Ingredienti", "FR": "Ingrédients", "ENG": "Ingredients", "NL": "Ingredienten"},
-    "lbl_all": {"ITA": "Allergeni", "FR": "Allergènes", "ENG": "Allergens", "NL": "Allergenen"},
+                    "ENG": "Chemical & Microbiological Characteristics", "NL": "Chemische & Microbiologische Kenmerken", "DE": "Chemische und mikrobiologische Eigenschaften"},
+    "lbl_ean": {"ITA": "Codice EAN", "FR": "Code EAN", "ENG": "EAN Code", "NL": "EAN-code", "DE": "EAN-Code"},
+    "lbl_typ": {"ITA": "Tipologia", "FR": "Typologie", "ENG": "Typology", "NL": "Typologie", "DE": "Produkttyp"},
+    "lbl_label": {"ITA": "Etichettatura", "FR": "Étiquetage", "ENG": "Labelling", "NL": "Etikettering", "DE": "Kennzeichnung"},
+    "lbl_gmo": {"ITA": "OGM e Irraggiamento", "FR": "OGM et Irradiation", "ENG": "GMO & Irradiation", "NL": "GGO & Bestraling", "DE": "GVO und Bestrahlung"},
+    "lbl_shelf": {"ITA": "Shelf Life", "FR": "Durée de Conservation", "ENG": "Shelf Life", "NL": "Houdbaarheid", "DE": "Mindesthaltbarkeit"},
+    "lbl_pack": {"ITA": "Confezione", "FR": "Conditionnement", "ENG": "Packaging", "NL": "Verpakking", "DE": "Verpackung"},
+    "lbl_ingr": {"ITA": "Ingredienti", "FR": "Ingrédients", "ENG": "Ingredients", "NL": "Ingredienten", "DE": "Zutaten"},
+    "lbl_all": {"ITA": "Allergeni", "FR": "Allergènes", "ENG": "Allergens", "NL": "Allergenen", "DE": "Allergene"},
     "lbl_storeinstr": {"ITA": "Istruzioni per la Conservazione", "FR": "Instructions de Conservation",
-                       "ENG": "Storage Instructions", "NL": "Bewaarinstructies"},
-    "lbl_method": {"ITA": "Modalità d'Uso", "FR": "Mode d'Emploi", "ENG": "Method of Use", "NL": "Gebruiksaanwijzing"},
+                       "ENG": "Storage Instructions", "NL": "Bewaarinstructies", "DE": "Lagerhinweise"},
+    "lbl_method": {"ITA": "Modalità d'Uso", "FR": "Mode d'Emploi", "ENG": "Method of Use", "NL": "Gebruiksaanwijzing", "DE": "Verwendung"},
     "lbl_chem": {"ITA": "Caratteristiche Chimiche", "FR": "Caractéristiques Chimiques",
-                 "ENG": "Chemical Characteristics", "NL": "Chemische Kenmerken"},
+                 "ENG": "Chemical Characteristics", "NL": "Chemische Kenmerken", "DE": "Chemische Eigenschaften"},
     "lbl_micro": {"ITA": "Caratteristiche Microbiologiche", "FR": "Caractéristiques Microbiologiques",
-                  "ENG": "Microbiological Characteristics", "NL": "Microbiologische Kenmerken"},
-    "th_param": {"ITA": "Parametro", "FR": "Paramètre", "ENG": "Parameter", "NL": "Parameter"},
-    "th_value": {"ITA": "Valore", "FR": "Valeur", "ENG": "Value", "NL": "Waarde"},
-    "updated": {"ITA": "Aggiornato", "FR": "Mise à jour", "ENG": "Updated", "NL": "Bijgewerkt"},
+                  "ENG": "Microbiological Characteristics", "NL": "Microbiologische Kenmerken", "DE": "Mikrobiologische Eigenschaften"},
+    "th_param": {"ITA": "Parametro", "FR": "Paramètre", "ENG": "Parameter", "NL": "Parameter", "DE": "Parameter"},
+    "th_value": {"ITA": "Valore", "FR": "Valeur", "ENG": "Value", "NL": "Waarde", "DE": "Wert"},
+    "updated": {"ITA": "Aggiornato", "FR": "Mise à jour", "ENG": "Updated", "NL": "Bijgewerkt", "DE": "Aktualisiert"},
 }
 
 NUT = {
-    "energy": {"ITA": "Valore energetico", "FR": "Valeur énergétique", "ENG": "Energy value", "NL": "Energetische waarde"},
-    "fat": {"ITA": "Grassi", "FR": "Matières grasses", "ENG": "Fat", "NL": "Vetten"},
-    "sat": {"ITA": "di cui acidi grassi saturi", "FR": "dont acides gras saturés", "ENG": "of which saturates", "NL": "waarvan verzadigde vetzuren"},
-    "carb": {"ITA": "Carboidrati", "FR": "Glucides", "ENG": "Carbohydrate", "NL": "Koolhydraten"},
-    "sugar": {"ITA": "di cui zuccheri", "FR": "dont sucres", "ENG": "of which sugars", "NL": "waarvan suikers"},
-    "protein": {"ITA": "Proteine", "FR": "Protéines", "ENG": "Protein", "NL": "Eiwitten"},
-    "salt": {"ITA": "Sale", "FR": "Sel", "ENG": "Salt", "NL": "Zout"},
-    "fibre": {"ITA": "Fibre", "FR": "Fibres", "ENG": "Fibre", "NL": "Vezels"},
+    "energy": {"ITA": "Valore energetico", "FR": "Valeur énergétique", "ENG": "Energy value", "NL": "Energetische waarde", "DE": "Energie"},
+    "fat": {"ITA": "Grassi", "FR": "Matières grasses", "ENG": "Fat", "NL": "Vetten", "DE": "Fett"},
+    "sat": {"ITA": "di cui acidi grassi saturi", "FR": "dont acides gras saturés", "ENG": "of which saturates", "NL": "waarvan verzadigde vetzuren", "DE": "davon gesättigte Fettsäuren"},
+    "carb": {"ITA": "Carboidrati", "FR": "Glucides", "ENG": "Carbohydrate", "NL": "Koolhydraten", "DE": "Kohlenhydrate"},
+    "sugar": {"ITA": "di cui zuccheri", "FR": "dont sucres", "ENG": "of which sugars", "NL": "waarvan suikers", "DE": "davon Zucker"},
+    "protein": {"ITA": "Proteine", "FR": "Protéines", "ENG": "Protein", "NL": "Eiwitten", "DE": "Eiweiß"},
+    "salt": {"ITA": "Sale", "FR": "Sel", "ENG": "Salt", "NL": "Zout", "DE": "Salz"},
+    "fibre": {"ITA": "Fibre", "FR": "Fibres", "ENG": "Fibre", "NL": "Vezels", "DE": "Ballaststoffe"},
 }
 NUT_ORDER = ["energy", "fat", "sat", "carb", "sugar", "protein", "salt", "fibre"]
 
@@ -103,7 +107,7 @@ def render(prod, lang, date_str):
     row(t("lbl_typ"), g["typology"][lang])
     row(t("lbl_shelf"), g["shelf"][lang])
     row(t("lbl_pack"), g["packaging"][lang])
-    row(t("lbl_label"), g["labelling"])
+    row(t("lbl_label"), localized(g["labelling"], lang))
     row(t("lbl_gmo"), g["gmo"][lang])
     general_html = '<div class="section"><div class="section-title">%s</div><div class="info-grid">%s</div></div>' % (t("sec_general"), "".join(info))
 
@@ -186,18 +190,20 @@ def render(prod, lang, date_str):
     return html
 
 if __name__ == "__main__":
-    from weasyprint import HTML
     data_file = sys.argv[1]; out_dir = sys.argv[2]
     date_str = sys.argv[3] if len(sys.argv) > 3 else "06/06/2026"
-    with open(data_file, encoding="utf-8") as f:
-        products = json.load(f)
+    requested_langs = sys.argv[4].split(",") if len(sys.argv) > 4 else list(LANGS)
+    unknown_langs = [lang for lang in requested_langs if lang not in LANGS]
+    if unknown_langs:
+        raise SystemExit("Unknown language code(s): %s" % ", ".join(unknown_langs))
+    products = load_products_file(data_file)
     for prod in products:
         folder = os.path.join(out_dir, prod["folder"])
         os.makedirs(folder, exist_ok=True)
-        for lang in LANGS:
+        for lang in requested_langs:
             html = render(prod, lang, date_str)
             base = "%s_%s" % (prod["folder"], lang)
             with open(os.path.join(folder, base + ".html"), "w", encoding="utf-8") as f:
                 f.write(html)
-            HTML(string=html).write_pdf(os.path.join(folder, base + ".pdf"))
+            write_pdf(html, os.path.join(folder, base + ".pdf"))
         print("OK", prod["folder"])
