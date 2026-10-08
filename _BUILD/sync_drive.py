@@ -250,7 +250,7 @@ def prepare(drive, source_id, processed_id, manifest, client, build_dir=BUILD, r
         "unchanged": state["unchanged"],
         "removed_source_ids": state["removed_source_ids"],
         "removed_folders": removed_folders,
-        "move_source_ids": sorted(item["id"] for item in pending),
+        "move_source_ids": sorted(item["id"] for item in pending) if not errors else [],
         "source_folder_id": source_id, "processed_folder_id": processed_id,
         "next_manifest": next_manifest,
         "active_products": active_products,

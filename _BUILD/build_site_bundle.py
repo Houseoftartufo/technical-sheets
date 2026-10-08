@@ -68,6 +68,58 @@ def _validate_product_files(folder, directory):
         raise RuntimeError(f"Product {folder} is missing generated files: {', '.join(missing)}")
 
 
+def migrate_legacy_product_titles(drive, catalog_id, manifest, active_products):
+    """Recover localized titles from existing HTML for v1 manifest entries without titles."""
+    from html.parser import HTMLParser
+
+    class TitleParser(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.depth = 0
+            self.value = []
+        def handle_starttag(self, tag, attrs):
+            if tag == "div" and "product-title" in dict(attrs).get("class", "").split():
+                self.depth += 1
+        def handle_endtag(self, tag):
+            if tag == "div" and self.depth:
+                self.depth -= 1
+        def handle_data(self, data):
+            if self.depth:
+                self.value.append(data)
+
+    for entry in manifest.get("products", {}).values():
+        folder = entry.get("folder")
+        if not folder or folder not in active_products:
+            continue
+        if all(entry.get("title", {}).get(language) for language in LANGS):
+            continue
+        folder_obj = _drive_folder(drive, catalog_id, folder)
+        product_files = drive.files().list(
+            q=f"'{folder_obj['id']}' in parents and trashed = false", pageSize=1000,
+            fields="files(id,name,mimeType)", supportsAllDrives=True, includeItemsFromAllDrives=True,
+        ).execute().get("files", [])
+        by_name = {}
+        for item in product_files:
+            by_name.setdefault(item["name"], []).append(item)
+        localized = {}
+        for language in LANGS:
+            filename = f"{folder}_{language}.html"
+            matches = by_name.get(filename, [])
+            if len(matches) != 1:
+                raise RuntimeError(f"Cannot migrate title for {folder} {language}: expected one existing HTML")
+            html = download_drive_file(drive, matches[0]).decode("utf-8")
+            parser = TitleParser()
+            parser.feed(html)
+            localized[language] = "".join(parser.value).strip()
+        if not all(localized.values()):
+            raise RuntimeError(f"Cannot migrate all localized titles for {folder}")
+        entry["title"] = localized
+        active_products[folder] = localized
+    manifest["version"] = 2
+    manifest.setdefault("legacy_folders", [])
+    return active_products
+
+
 def assemble_site_bundle(repo_root, generated_root, active_products, drive, catalog_id, output_root):
     """Copy public assets, unchanged active Drive outputs and generated updates into an empty bundle."""
     repo_root = Path(repo_root).resolve()
@@ -136,32 +188,7 @@ def main():
         raise RuntimeError("Cannot assemble bundle for blocked Drive plan")
     manifest = load_manifest_bytes(download_drive_file(drive, manifest_matches[0])) if manifest_matches else plan["next_manifest"]
     active = plan["active_products"]
-    # Existing v1 entries without localized titles are migrated from their stored output HTML.
-    from html.parser import HTMLParser
-    class TitleParser(HTMLParser):
-        def __init__(self):
-            super().__init__(); self.in_title=False; self.value=[]
-        def handle_starttag(self, tag, attrs):
-            if tag == "div" and ("product-title" in dict(attrs).get("class", "").split()): self.in_title=True
-        def handle_endtag(self, tag):
-            if tag == "div" and self.in_title: self.in_title=False
-        def handle_data(self, data):
-            if self.in_title: self.value.append(data)
-    for entry in manifest.get("products", {}).values():
-        folder=entry.get("folder")
-        if folder and folder in active and not all(entry.get("title", {}).get(lang) for lang in LANGS):
-            localized={}
-            for lang in LANGS:
-                query=f"'{catalog_id}' in parents and trashed = false and name = '{folder}' and mimeType = '{FOLDER_MIME}'"
-                matches=drive.files().list(q=query,pageSize=10,fields="files(id)",supportsAllDrives=True,includeItemsFromAllDrives=True).execute().get("files",[])
-                if len(matches)!=1: raise RuntimeError(f"Cannot migrate titles for {folder}: product folder missing or ambiguous")
-                child=drive.files().list(q=f"'{matches[0]['id']}' in parents and trashed = false and name = '{folder}_{lang}.html'",pageSize=10,fields="files(id,name)",supportsAllDrives=True,includeItemsFromAllDrives=True).execute().get("files",[])
-                if len(child)!=1: raise RuntimeError(f"Cannot migrate title for {folder} {lang}")
-                html=download_drive_file(drive,child[0]).decode("utf-8")
-                parser=TitleParser(); parser.feed(html); localized[lang]="".join(parser.value).strip()
-            if not all(localized.values()): raise RuntimeError(f"Cannot extract all localized titles for {folder}")
-            entry["title"]=localized
-            active[folder]=localized
+    migrate_legacy_product_titles(drive, catalog_id, manifest, active)
     plan["next_manifest"]=manifest
     plan["active_products"]=active
     (run_dir / "drive_sync_plan.json").write_text(json.dumps(plan,ensure_ascii=False,indent=2),encoding="utf-8")
