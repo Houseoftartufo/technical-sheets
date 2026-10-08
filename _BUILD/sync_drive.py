@@ -165,15 +165,18 @@ def extract(client, item, content):
         "field is absent or ambiguous, return an empty value so validation blocks publication. EAN may be empty. "
         "Use the product folder identifier in uppercase with underscores."
     )
-    response = client.responses.create(
-        model=os.environ.get("OPENAI_IMPORT_MODEL", "gpt-4.1"),
-        input=[{"role": "user", "content": [
-            {"type": "input_file", "file_id": uploaded.id, "detail": "high"},
-            {"type": "input_text", "text": instruction},
-        ]}],
-        text={"format": {"type": "json_schema", "name": "technical_sheet", "strict": True, "schema": schema}},
-    )
-    return json.loads(response.output_text)
+    try:
+        response = client.responses.create(
+            model=os.environ.get("OPENAI_IMPORT_MODEL", "gpt-4.1"),
+            input=[{"role": "user", "content": [
+                {"type": "input_file", "file_id": uploaded.id, "detail": "high"},
+                {"type": "input_text", "text": instruction},
+            ]}],
+            text={"format": {"type": "json_schema", "name": "technical_sheet", "strict": True, "schema": schema}},
+        )
+        return json.loads(response.output_text)
+    finally:
+        client.files.delete(uploaded.id)
 
 
 def prepare(drive, source_id, processed_id, manifest, client, build_dir=BUILD, run_dir=None):

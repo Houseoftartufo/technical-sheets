@@ -12,6 +12,7 @@ class FakeFiles:
     def create(self, file, purpose):
         self.upload=(file,purpose)
         return type("File",(),{"id":"uploaded-pdf"})()
+    def delete(self, file_id): self.deleted=file_id
 class FakeResponses:
     def create(self, **kwargs): return type("Response",(),{"output_text":"{}"})()
 class FakeClient:
@@ -29,5 +30,14 @@ class WordExtractionTests(unittest.TestCase):
         self.assertEqual(client.files.upload[0][0],"supplier.pdf")
         self.assertEqual(client.files.upload[0][1],b"%PDF converted Word")
         self.assertEqual(result,{})
+        self.assertEqual(client.files.deleted,"uploaded-pdf")
+
+    def test_uploaded_openai_file_is_deleted_even_when_extraction_fails(self):
+        client=FakeClient()
+        client.responses.create=lambda **kwargs: (_ for _ in ()).throw(RuntimeError("extraction failed"))
+        item={"id":"word","name":"supplier.pdf","mimeType":"application/pdf"}
+        with self.assertRaisesRegex(RuntimeError,"extraction failed"):
+            sync_drive.extract(client,item,b"%PDF original")
+        self.assertEqual(client.files.deleted,"uploaded-pdf")
 
 if __name__=="__main__": unittest.main()
