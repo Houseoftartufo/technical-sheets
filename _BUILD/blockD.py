@@ -1,5 +1,5 @@
-import json,sys
-sys.path.insert(0,"/tmp/build")
+import json
+from pathlib import Path
 from common import *
 EAN=""
 stor_salt=L("Conservare a temperatura ambiente, al riparo dalla luce e da fonti di calore. Dopo l'apertura, conservare il prodotto nella confezione originale, al riparo dalla luce diretta, in luogo asciutto e ben ventilato.",
@@ -56,5 +56,5 @@ P.append(prod("22_SALSA_TARTUFATA_AL_TARTUFO_ESTIVO",
  ALL["none"], STOR["amb_fridge"], USE["ready"],
  {"energy":"927 kJ / 225 kcal","fat":"20,00 g","sat":"2,5 g","carb":"5,00 g","sugar":"1,00 g","protein":"2,00 g","salt":"1,00 g"},
  micro=MICRO["full"]))
-json.dump(P,open("/tmp/build/blockD.json","w"),ensure_ascii=False,indent=1)
+json.dump(P,open(Path(__file__).with_suffix(".json"),"w",encoding="utf-8"),ensure_ascii=False,indent=1)
 print("blockD.json:",len(P))
