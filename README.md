@@ -34,8 +34,8 @@ ricostruite dai testi originali italiani Sassone con traduzioni B2B e dati verba
 - Configurare i secret GitHub `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON`, `OPENAI_API_KEY`, `DRIVE_SOURCE_FOLDER_ID` (cartella input) e `DRIVE_CATALOG_FOLDER_ID` (cartella catalogo ufficiale; `1vEyctBT3z9F5-hFM-DeTWEsjaY2I8drb`).
 - Per scrivere nel catalogo che si trova in My Drive, configurare anche `GOOGLE_DRIVE_IMPERSONATED_USER` con un account Google Workspace e abilitare la delega a livello di dominio per il service account. In alternativa, usare una cartella in un Drive condiviso.
 - Condividere la cartella sorgente con l'indirizzo email del service account indicato nel JSON GitHub.
-- Un prodotto già presente viene pubblicato come `DUPLICATE_...` con evidenziazione blu nell'indice; i campi assenti restano vuoti.
-- La sincronizzazione automatica avviene ogni 15 minuti e aggiorna `main` solo dopo validazione.
+- Un prodotto già presente viene pubblicato come `DUPLICATE_...` con evidenziazione blu nell'indice; i campi assenti restano vuoti. Il Carpaccio di tartufo estivo in olio è il prodotto `28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO`, distinto dal prodotto 06 in acqua.
+- La sincronizzazione automatica avviene ogni 15 minuti e aggiorna `main` solo dopo validazione. I file invariati vengono riconosciuti tramite impronta e saltano estrazione, traduzione e generazione.
 - Dopo la validazione il job genera HTML/PDF in uno spazio temporaneo dell'esecuzione e carica/aggiorna in Drive le cartelle prodotto; le rimozioni gestite vengono spostate nel cestino Drive. Le schede già presenti nel repository e sul sito non vengono rigenerate o cancellate dal job.
 
 Aggiornato: 06/06/2026

@@ -15,6 +15,10 @@ from googleapiclient.http import MediaIoBaseDownload
 from openai import OpenAI
 
 from drive_schema import LANGS, validate_product
+from drive_sync_state import (
+    canonicalize_product, load_manifest, product_manifest_entry,
+    removed_product_folders, resolve_output_folder, unchanged_source_ids,
+)
 from i18n import DATA_FILES
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,7 +50,7 @@ def list_sources(drive):
 
 
 def download(drive, item):
-    request = drive.files().get_media(fileId=item["id"])
+    request = drive.files().get_media(fileId=item["id"], supportsAllDrives=True)
     from io import BytesIO
     buffer = BytesIO()
     downloader = MediaIoBaseDownload(buffer, request)
@@ -125,7 +129,9 @@ def extract(client, item, content):
 
 def main():
     drive = drive_client()
-    catalog = drive.files().get(fileId=CATALOG_ID, fields="id,name,driveId").execute()
+    catalog = drive.files().get(
+        fileId=CATALOG_ID, fields="id,name,driveId", supportsAllDrives=True,
+    ).execute()
     if not catalog.get("driveId") and not os.environ.get("GOOGLE_DRIVE_IMPERSONATED_USER"):
         raise SystemExit(
             "The catalog folder is in My Drive, but service accounts have no Drive storage quota. "
@@ -133,42 +139,61 @@ def main():
             "GOOGLE_DRIVE_IMPERSONATED_USER before importing supplier documents."
         )
     client = OpenAI()
-    errors, imported = [], {}
+    errors, imported, processed_entries = [], {}, {}
     existing = set()
     for filename in DATA_FILES:
         source = BUILD / filename
         if source.exists():
             existing.update(item["folder"] for item in json.loads(source.read_text(encoding="utf-8")))
-    for item in list_sources(drive):
+
+    sources = list_sources(drive)
+    previous_path = BUILD / "drive_manifest.json"
+    previous = load_manifest(previous_path)
+    unchanged = unchanged_source_ids(sources, previous)
+    reserved_folders = {
+        entry.get("folder") for source_id, entry in previous.get("products", {}).items()
+        if source_id in unchanged and entry.get("folder")
+    }
+    for item in sources:
+        if item["id"] in unchanged:
+            continue
         try:
             product = extract(client, item, download(drive, item))
+            product = canonicalize_product(product, item["name"])
             validation = validate_product(product)
             if validation:
                 errors.append({"file": item["name"], "errors": validation})
             else:
-                folder = product["folder"]
-                if folder in existing:
-                    duplicate_folder = "DUPLICATE_%s" % folder
-                    product["duplicate_of"] = folder
-                    product["folder"] = duplicate_folder
-                    folder = duplicate_folder
+                folder, collision = resolve_output_folder(product, existing, imported, reserved_folders)
+                if collision:
+                    errors.append({"file": item["name"], "errors": [collision]})
+                    continue
                 imported[folder] = product
+                processed_entries[item["id"]] = product_manifest_entry(item, folder)
         except Exception as exc:
             errors.append({"file": item["name"], "errors": [str(exc)]})
     if errors:
-        report = {"status": "blocked", "errors": errors, "imported": list(imported)}
+        report = {"status": "blocked", "errors": errors, "imported": list(imported),
+                  "unchanged": len(unchanged)}
         report_text = json.dumps(report, ensure_ascii=False, indent=2)
         (BUILD / "drive_sync_report.json").write_text(report_text, encoding="utf-8")
         print(report_text, file=sys.stderr)
         raise SystemExit("Drive import blocked; see _BUILD/drive_sync_report.json")
-    previous_path = BUILD / "drive_manifest.json"
-    previous = set(json.loads(previous_path.read_text(encoding="utf-8"))) if previous_path.exists() else set()
-    current = set(imported)
-    (BUILD / "removed_products.json").write_text(json.dumps(sorted(previous - current), ensure_ascii=False, indent=2), encoding="utf-8")
-    (BUILD / "drive_manifest.json").write_text(json.dumps(sorted(current), ensure_ascii=False, indent=2), encoding="utf-8")
+
+    current_ids = {item["id"] for item in sources}
+    removed = removed_product_folders(previous, current_ids, processed_entries)
+    next_products = {
+        source_id: entry for source_id, entry in previous.get("products", {}).items()
+        if source_id in current_ids
+    }
+    next_products.update(processed_entries)
+    manifest = {"version": 1, "products": next_products,
+                "legacy_folders": previous.get("legacy_folders", [])}
+    (BUILD / "removed_products.json").write_text(json.dumps(removed, ensure_ascii=False, indent=2), encoding="utf-8")
+    previous_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     (BUILD / "product_overrides.json").write_text(json.dumps(imported, ensure_ascii=False, indent=2), encoding="utf-8")
-    (BUILD / "drive_sync_report.json").write_text(json.dumps({"status": "ready", "imported": list(imported), "errors": []}, ensure_ascii=False, indent=2), encoding="utf-8")
-    print("Drive sync ready:", len(imported), "products")
+    (BUILD / "drive_sync_report.json").write_text(json.dumps({"status": "ready", "imported": list(imported), "unchanged": len(unchanged), "removed": removed, "errors": []}, ensure_ascii=False, indent=2), encoding="utf-8")
+    print("Drive sync ready:", len(imported), "changed products;", len(unchanged), "unchanged")
 
 
 if __name__ == "__main__":
