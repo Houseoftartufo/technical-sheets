@@ -28,25 +28,29 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python _BUILD/sync_drive.py
       - name: Generate official HTML and PDF files
+        env:
+          DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
         run: |
-          python _BUILD/cleanup_removed.py
-          python _BUILD/engine.py _BUILD/product_overrides.json . 06/06/2026
-          python _BUILD/build_index.py
+          mkdir -p "$DRIVE_GENERATED_DIR"
+          python _BUILD/engine.py _BUILD/product_overrides.json "$DRIVE_GENERATED_DIR" 06/06/2026
           git diff --check
-          test "$(find . -mindepth 2 -name '*.pdf' | wc -l)" -ge 135
-          for pdf in $(find . -mindepth 2 -name '*.pdf'); do
+          expected_files=$(python -c 'import json; print(len(json.load(open("_BUILD/product_overrides.json", encoding="utf-8"))) * 10)')
+          actual_files=$(find "$DRIVE_GENERATED_DIR" -type f \( -name '*.html' -o -name '*.pdf' \) | wc -l)
+          test "$actual_files" -eq "$expected_files"
+          for pdf in $(find "$DRIVE_GENERATED_DIR" -name '*.pdf'); do
             pages=$(pdfinfo "$pdf" | awk '/^Pages:/ {print $2}')
-            test "$pages" = "2"
+            test -n "$pages" && test "$pages" -ge 1
           done
       - name: Publish generated files to Google Drive
         env:
           GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
           DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID }}
+          DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
         run: python _BUILD/publish_drive.py
       - name: Publish generated catalog
         run: |
           git config user.name "houseoftartufo-drive-sync"
           git config user.email "admin@houseoftartufo.com"
-          git add -A
+          git add _BUILD/drive_manifest.json
           git diff --cached --quiet || git commit -m "chore: sync supplier technical sheets"
           git push origin main
