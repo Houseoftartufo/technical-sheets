@@ -39,6 +39,9 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertLess(smoke, production)
         self.assertLess(production, drive)
         self.assertIn("active_products", self.workflow)
+        self.assertIn("steps.prepare.outputs.has_changes == 'true'", self.workflow)
+        self.assertIn("Record workflow outcome", self.workflow)
+        self.assertIn("workflow_status", self.workflow)
 
     def test_never_commits_generated_outputs_or_manifest_and_always_uploads_report(self):
         for forbidden in ("git push", "git commit", "git add _BUILD/drive_manifest.json"):
@@ -50,8 +53,9 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("runner.temp", self.workflow)
 
     def test_readme_documents_git_deploy_prevention_and_setup(self):
-        self.assertIn("Git → Ignored Build Step", self.readme)
-        self.assertIn("deploy automatici Git", self.readme)
+        self.assertIn("Ignored Build Step", self.readme)
+        self.assertIn("exit 0", self.readme)
+        self.assertIn("deploy avviati dai push Git", self.readme)
         self.assertIn("Run workflow", self.readme)
 
 if __name__ == "__main__": unittest.main()

@@ -6,7 +6,9 @@ product_overrides.json and are rendered by the same engine.py/build_index.py.
 import json
 import os
 import re
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from drive_schema import LANGS, validate_product
@@ -90,7 +92,24 @@ def download(drive, item):
 
 
 def extract(client, item, content):
-    uploaded = client.files.create(file=(item["name"], content), purpose="user_data")
+    filename = Path(item.get("name", "supplier.pdf")).name
+    mime_type = item.get("mimeType")
+    if mime_type in {"application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"}:
+        with tempfile.TemporaryDirectory(prefix="supplier-word-") as temp:
+            temp_path = Path(temp)
+            source_path = temp_path / filename
+            source_path.write_bytes(content)
+            converted_path = temp_path / (source_path.stem + ".pdf")
+            result = subprocess.run(
+                ["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", str(temp_path), str(source_path)],
+                capture_output=True, text=True, check=True, timeout=180,
+            )
+            if not converted_path.is_file():
+                raise RuntimeError("Word-to-PDF conversion did not create an output file: " + result.stderr[-500:])
+            upload_name, upload_content = converted_path.name, converted_path.read_bytes()
+    else:
+        upload_name, upload_content = filename, content
+    uploaded = client.files.create(file=(upload_name, upload_content), purpose="user_data")
     def localized_schema():
         return {
             "type": "object",
