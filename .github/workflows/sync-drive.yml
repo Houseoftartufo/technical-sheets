@@ -2,6 +2,8 @@ name: Sync supplier technical sheets
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
   schedule:
     - cron: "*/15 * * * *"
 
@@ -10,63 +12,135 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DRIVE_RUN_DIR: ${{ runner.temp }}/technical-sheets-run
+      DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
+      SITE_BUNDLE_DIR: ${{ runner.temp }}/technical-sheets-site
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install importer dependencies
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install importer and PDF dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libharfbuzz-subset0 poppler-utils
           pip install -r requirements-drive.txt
-      - name: Read, translate and validate supplier sheets
+          npm install --global vercel@48.1.0
+      - name: Prepare sync run
+        id: prepare
         env:
           GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
           GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
-          DRIVE_SOURCE_FOLDER_ID: ${{ secrets.DRIVE_SOURCE_FOLDER_ID }}
-          DRIVE_CATALOG_FOLDER_ID: ${{ secrets.DRIVE_CATALOG_FOLDER_ID }}
+          DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID || secrets.DRIVE_SOURCE_FOLDER_ID }}
+          DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID || secrets.DRIVE_CATALOG_FOLDER_ID }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: python _BUILD/sync_drive.py
-      - name: Generate official HTML and PDF files
-        env:
-          DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
+        run: |
+          mkdir -p "$DRIVE_RUN_DIR"
+          python _BUILD/sync_drive.py
+      - name: Generate changed technical sheets with official engine
         run: |
           mkdir -p "$DRIVE_GENERATED_DIR"
-          python _BUILD/engine.py _BUILD/product_overrides.json "$DRIVE_GENERATED_DIR" 06/06/2026
+          python _BUILD/engine.py "$DRIVE_RUN_DIR/product_overrides.json" "$DRIVE_GENERATED_DIR" 06/06/2026
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from i18n import LANGS
+          root = Path(os.environ["DRIVE_GENERATED_DIR"])
+          products = json.loads(Path(os.environ["DRIVE_RUN_DIR"], "drive_sync_plan.json").read_text(encoding="utf-8"))["imported"]
+          expected = len(products) * len(LANGS) * 2
+          actual = sum(1 for path in root.rglob("*") if path.suffix in {".html", ".pdf"})
+          if actual != expected:
+              raise SystemExit(f"Expected {expected} outputs, found {actual}")
+          for path in root.rglob("*.pdf"):
+              if path.stat().st_size < 500:
+                  raise SystemExit(f"PDF is unexpectedly small: {path}")
+          PY
+          python -m unittest discover -s tests -v
+          node --test tests/search.test.js
           git diff --check
-          expected_files=$(python -c 'import json; print(len(json.load(open("_BUILD/product_overrides.json", encoding="utf-8"))) * 10)')
-          actual_files=$(find "$DRIVE_GENERATED_DIR" -type f \( -name '*.html' -o -name '*.pdf' \) | wc -l)
-          test "$actual_files" -eq "$expected_files"
-          for pdf in $(find "$DRIVE_GENERATED_DIR" -name '*.pdf'); do
-            pages=$(pdfinfo "$pdf" | awk '/^Pages:/ {print $2}')
-            test -n "$pages" && test "$pages" -ge 1
-          done
-      - name: Publish generated files to Google Drive
+      - name: Assemble and validate complete site bundle
         env:
           GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
           GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
-          DRIVE_CATALOG_FOLDER_ID: ${{ secrets.DRIVE_CATALOG_FOLDER_ID }}
-          DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
-        run: python _BUILD/publish_drive.py
-      - name: Publish generated catalog
+          DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID || secrets.DRIVE_CATALOG_FOLDER_ID }}
+        run: python _BUILD/build_site_bundle.py
+      - name: Link Vercel project
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+        run: vercel link --yes --project "$VERCEL_PROJECT_ID" --scope "$VERCEL_ORG_ID" --token "$VERCEL_TOKEN"
+      - name: Deploy Vercel preview
+        id: preview
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          git config user.name "houseoftartufo-drive-sync"
-          git config user.email "admin@houseoftartufo.com"
-          git add _BUILD/drive_manifest.json
-          git diff --cached --quiet || git commit -m "chore: sync supplier technical sheets"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          url=$(vercel deploy "$SITE_BUNDLE_DIR" --yes --token "$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          python - "$DRIVE_RUN_DIR/drive_sync_report.json" "$url" <<'PY'
+          import json, sys
+          from pathlib import Path
+          path=Path(sys.argv[1]); report=json.loads(path.read_text(encoding="utf-8"))
+          report["preview_deployment_url"]=sys.argv[2]
+          path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
+          PY
+      - name: Smoke-test preview
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+          DRIVE_RUN_DIR: ${{ runner.temp }}/technical-sheets-run
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          from pathlib import Path
+          base=os.environ["PREVIEW_URL"].rstrip("/")
+          def check(path):
+              with urllib.request.urlopen(base + "/" + path, timeout=30) as response:
+                  if response.status != 200: raise RuntimeError(f"HTTP {response.status}: {path}")
+                  return response.read()
+          check("index.html")
+          plan=json.loads(Path(os.environ["DRIVE_RUN_DIR"], "drive_sync_plan.json").read_text(encoding="utf-8"))
+          for folder in plan["active_products"]:
+              for lang in ("ITA", "FR", "ENG", "NL", "DE"):
+                  check(f"{folder}/{folder}_{lang}.pdf")
+          PY
+      - name: Deploy Vercel production
+        id: production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DRIVE_RUN_DIR: ${{ runner.temp }}/technical-sheets-run
+        run: |
+          url=$(vercel deploy "$SITE_BUNDLE_DIR" --prod --yes --token "$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          python - "$DRIVE_RUN_DIR/drive_sync_report.json" "$url" <<'PY'
+          import json, sys
+          from pathlib import Path
+          path=Path(sys.argv[1]); report=json.loads(path.read_text(encoding="utf-8"))
+          report["production_deployment_url"]=sys.argv[2]
+          path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
+          PY
+      - name: Finalize Drive state
+        env:
+          GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
+          DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID || secrets.DRIVE_CATALOG_FOLDER_ID }}
+          DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID || secrets.DRIVE_SOURCE_FOLDER_ID }}
+          DRIVE_RUN_DIR: ${{ runner.temp }}/technical-sheets-run
+          DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
+        run: python _BUILD/finalize_drive_sync.py
       - name: Save Drive sync report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: drive-sync-report
-          path: _BUILD/drive_sync_report.json
-          if-no-files-found: ignore
+          name: drive-sync-report-${{ github.run_id }}
+          path: ${{ runner.temp }}/technical-sheets-run/drive_sync_report.json
+          if-no-files-found: warn

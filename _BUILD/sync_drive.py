@@ -260,6 +260,16 @@ def prepare(drive, source_id, processed_id, manifest, client, build_dir=BUILD, r
     return plan
 
 
+def load_manifest_bytes(data):
+    value = json.loads(data.decode("utf-8"))
+    if not isinstance(value, dict) or not isinstance(value.get("products", {}), dict):
+        raise ValueError("Drive manifest has an unsupported format")
+    if value.get("version", 1) not in (1, 2):
+        raise ValueError("Drive manifest has an unsupported version")
+    return {"version": 2, "products": value.get("products", {}),
+            "legacy_folders": value.get("legacy_folders", [])}
+
+
 def write_plan_files(run_dir, plan):
     plan_path = Path(run_dir) / "drive_sync_plan.json"
     plan_path.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -289,27 +299,34 @@ def main():
             "GOOGLE_DRIVE_IMPERSONATED_USER before importing supplier documents."
         )
     processed = ensure_processed_folder(drive, FOLDER_ID)
-    previous_path = BUILD / "drive_manifest.json"
-    previous = load_manifest(previous_path)
     run_dir = Path(os.environ.get("DRIVE_RUN_DIR") or os.environ.get("RUNNER_TEMP") or BUILD)
-    plan = prepare(drive, FOLDER_ID, processed["id"], previous, OpenAI(), run_dir=run_dir)
+    run_dir.mkdir(parents=True, exist_ok=True)
+    manifest_matches = drive.files().list(
+        q=f"'{CATALOG_ID}' in parents and trashed = false and name = '.technical-sheets-manifest.json'",
+        pageSize=10, fields="files(id,name)", supportsAllDrives=True, includeItemsFromAllDrives=True,
+    ).execute().get("files", [])
+    if len(manifest_matches) > 1:
+        raise SystemExit("Multiple Drive sync manifests found; refusing to choose one")
+    manifest_file_id = manifest_matches[0]["id"] if manifest_matches else None
+    if manifest_file_id:
+        from publish_drive import download_drive_file
+        previous = load_manifest_bytes(download_drive_file(drive, manifest_matches[0]))
+    else:
+        previous = load_manifest(BUILD / "drive_manifest.json")
+    (run_dir / "manifest_file_id.txt").write_text(manifest_file_id or "", encoding="utf-8")
+    plan = prepare(drive, FOLDER_ID, processed["id"], previous, OpenAI(), run_dir=run_dir, build_dir=BUILD)
+    (run_dir / "product_overrides.json").write_text(
+        json.dumps(plan.get("imported", {}), ensure_ascii=False, indent=2), encoding="utf-8",
+    )
     report_text = json.dumps({
         "status": plan["status"], "imported": sorted(plan["imported"]),
         "unchanged": len(plan["unchanged"]), "removed": plan["removed_folders"],
         "errors": plan["errors"],
     }, ensure_ascii=False, indent=2)
-    (BUILD / "drive_sync_report.json").write_text(report_text, encoding="utf-8")
+    (run_dir / "drive_sync_report.json").write_text(report_text, encoding="utf-8")
     if plan["status"] != "ready":
         print(report_text, file=sys.stderr)
-        raise SystemExit("Drive import blocked; see drive_sync_report.json")
-
-    (BUILD / "removed_products.json").write_text(
-        json.dumps(plan["removed_folders"], ensure_ascii=False, indent=2), encoding="utf-8",
-    )
-    previous_path.write_text(json.dumps(plan["next_manifest"], ensure_ascii=False, indent=2), encoding="utf-8")
-    (BUILD / "product_overrides.json").write_text(
-        json.dumps(plan["imported"], ensure_ascii=False, indent=2), encoding="utf-8",
-    )
+        raise SystemExit("Drive import blocked; see the uploaded drive-sync-report artifact")
     print("Drive sync ready:", len(plan["imported"]), "changed products;", len(plan["unchanged"]), "unchanged")
 
 
