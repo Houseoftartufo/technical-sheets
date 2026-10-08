@@ -7,7 +7,7 @@ from pdf_backend import write_pdf
 
 
 ROOT = Path(__file__).resolve().parents[1]
-LOGO_PATH = ROOT / "HOT_logo_Full_Black.svg"
+LOGO_PATH = ROOT / "house-of-tartufo-logo.png"
 with open(LOGO_PATH, "rb") as f:
     LOGO_B64 = base64.b64encode(f.read()).decode()
 
@@ -63,9 +63,9 @@ CSS = """
         @page { size: A4; margin: 15mm 15mm 20mm 15mm; }
         body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; color: #1a1a1a; line-height: 1.6; }
         .container { background: white; position: relative; }
-        .header { display: grid; grid-template-columns: 130px 1fr; gap: 25px; margin-bottom: 30px; padding-bottom: 25px; border-bottom: 3px solid #856244; align-items: flex-start; }
-        .logo-container { display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f9f7f4, #faf9f6); border: 2px solid #e8c897; border-radius: 12px; padding: 15px; min-height: 145px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .logo { width: 110px; height: 110px; background: url('data:image/svg+xml;base64,__LOGO__') no-repeat center; background-size: contain; }
+        .header { display: grid; grid-template-columns: 245px 1fr; gap: 25px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #856244; align-items: center; }
+        .logo-container { display: flex; align-items: center; justify-content: center; min-height: 78px; }
+        .logo { width: 245px; height: 78px; background: url('data:image/png;base64,__LOGO__') no-repeat center; background-size: contain; }
         .company-info { display: flex; flex-direction: column; justify-content: center; padding-top: 8px; }
         .company-name { font-size: 16px; font-weight: 700; color: #0f0902; margin-bottom: 8px; }
         .company-details { font-size: 9px; color: #555; line-height: 1.6; }
