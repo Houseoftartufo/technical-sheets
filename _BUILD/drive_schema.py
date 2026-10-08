@@ -37,6 +37,22 @@ def validate_product(product):
             values = get_path(product, path)
             if not isinstance(values, dict) or any(lang not in values for lang in LANGS):
                 errors.append("missing language in: " + ".".join(path))
+                continue
+            for language in LANGS:
+                value = values[language]
+                if not isinstance(value, str) or not value.strip():
+                    errors.append("missing required value: " + ".".join(path) + "." + language)
         except (KeyError, TypeError):
             pass
+    try:
+        nutrition = product["nutrition"]
+        if not isinstance(nutrition, dict):
+            errors.append("invalid field: nutrition")
+        else:
+            for name in ("energy", "fat", "sat", "carb", "sugar", "protein", "salt", "fibre"):
+                value = nutrition.get(name)
+                if not isinstance(value, str) or not value.strip():
+                    errors.append("missing required value: nutrition." + name)
+    except (KeyError, TypeError):
+        pass
     return errors

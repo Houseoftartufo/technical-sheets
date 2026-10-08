@@ -33,18 +33,14 @@ def canonicalize_product(product, source_name):
 def resolve_output_folder(product, existing_folders, imported_products, reserved_folders=()):
     """Choose a safe destination or block if two supplier files collide."""
     original = product["folder"]
-    folder = original
     if original in existing_folders or original in reserved_folders:
-        folder = "DUPLICATE_%s" % original
-    if folder in imported_products or folder in reserved_folders:
+        return None, f"Product folder collision for '{original}'; classify the supplier sheet before publishing."
+    if original in imported_products:
         return None, (
             "Multiple supplier files resolve to the same product folder "
-            f"'{folder}'; rename or classify the supplier sheet before publishing."
+            f"'{original}'; rename or classify the supplier sheet before publishing."
         )
-    if folder != original:
-        product["duplicate_of"] = original
-        product["folder"] = folder
-    return folder, None
+    return original, None
 
 
 def source_fingerprint(item):
