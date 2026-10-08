@@ -111,7 +111,9 @@ def main():
             errors.append({"file": item["name"], "errors": [str(exc)]})
     if errors:
         report = {"status": "blocked", "errors": errors, "imported": list(imported)}
-        (BUILD / "drive_sync_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        report_text = json.dumps(report, ensure_ascii=False, indent=2)
+        (BUILD / "drive_sync_report.json").write_text(report_text, encoding="utf-8")
+        print(report_text, file=sys.stderr)
         raise SystemExit("Drive import blocked; see _BUILD/drive_sync_report.json")
     previous_path = BUILD / "drive_manifest.json"
     previous = set(json.loads(previous_path.read_text(encoding="utf-8"))) if previous_path.exists() else set()
