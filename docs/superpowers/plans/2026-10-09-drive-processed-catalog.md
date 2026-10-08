@@ -75,10 +75,10 @@
 - Produces: backward-compatible `build_index(main(argv: list[str] | None = None) -> int)` with `--output PATH` retained and optional `--dynamic-products PATH` and `--site-root PATH`; language links resolve under the output site root.
 - Default CLI invocation continues to write the repository index and list exactly the existing 27 static products.
 
-- [ ] **Step 1: Write tests** asserting default output retains 27 cards, dynamic metadata adds one card with five language links and searchable localized names, and excluding a managed folder removes only that card.
-- [ ] **Step 2: Run** `python -m unittest tests.test_build_index -v`; confirm dynamic cases fail.
-- [ ] **Step 3: Implement** a callable builder and CLI options without changing default output or presentation.
-- [ ] **Step 4: Run** `python -m unittest tests.test_build_index tests.test_german_support -v`; verify default and dynamic rendering.
+- [x] **Step 1: Write tests** asserting default output retains 27 cards, dynamic metadata adds one card with five language links and searchable localized names, and excluding a managed folder removes only that card.
+- [x] **Step 2: Run** `python -m unittest tests.test_build_index -v`; confirm dynamic cases fail.
+- [x] **Step 3: Implement** a callable builder and CLI options without changing default output or presentation.
+- [x] **Step 4: Run** `python -m unittest tests.test_build_index tests.test_german_support -v`; verify default and dynamic rendering.
 
 ### Task 4: Assemble a complete, validated Vercel site bundle
 
