@@ -24,6 +24,7 @@ jobs:
         env:
           GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
           DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID }}
+          DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python _BUILD/sync_drive.py
       - name: Generate official HTML and PDF files
@@ -33,7 +34,15 @@ jobs:
           python _BUILD/build_index.py
           git diff --check
           test "$(find . -mindepth 2 -name '*.pdf' | wc -l)" -ge 135
-          ! find . -mindepth 2 -name '*.pdf' -print0 | xargs -0 -n1 pdfinfo | grep -qv '^Pages:.*2$'
+          for pdf in $(find . -mindepth 2 -name '*.pdf'); do
+            pages=$(pdfinfo "$pdf" | awk '/^Pages:/ {print $2}')
+            test "$pages" = "2"
+          done
+      - name: Publish generated files to Google Drive
+        env:
+          GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
+          DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID }}
+        run: python _BUILD/publish_drive.py
       - name: Publish generated catalog
         run: |
           git config user.name "houseoftartufo-drive-sync"

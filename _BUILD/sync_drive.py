@@ -20,7 +20,7 @@ from i18n import DATA_FILES
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / "_BUILD"
 FOLDER_ID = os.environ.get("DRIVE_SOURCE_FOLDER_ID") or "1Y1qgl2rih8Ikbjf6ch4CgG5Qtwg6k6hS"
-SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/drive"]
 SUPPORTED = {"application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"}
 
 
