@@ -91,10 +91,10 @@
 - Produces: `assemble_site_bundle(repo_root: Path, generated_root: Path, active_products: dict, drive: object, catalog_id: str, output_root: Path) -> Path`; copies public assets and the 27 static product directories, overlays changed products, downloads unchanged active HTML/PDF folders, writes dynamic title metadata, and calls Task 3's index builder.
 - Public assets include the logo, vercel.json, root index support files, and numbered product directories; exclude .git, .github, _BUILD internals, tests, reports, and supplier originals.
 
-- [ ] **Step 1: Write tests** proving 27 static product outputs survive byte-for-byte, an unchanged managed product is downloaded, a changed product overlays the prior version, dynamic links resolve to present PDFs, and files outside the active manifest are excluded.
-- [ ] **Step 2: Run** `python -m unittest tests.test_build_site_bundle -v`; confirm new bundle tests fail.
-- [ ] **Step 3: Implement** deterministic assembly into a clean directory; fail if an active product lacks any of its five language PDFs/HTML.
-- [ ] **Step 4: Run** `python -m unittest tests.test_build_site_bundle -v`; verify output counts, hashes, and links.
+- [x] **Step 1: Write tests** proving 27 static product outputs survive byte-for-byte, an unchanged managed product is downloaded, a changed product overlays the prior version, dynamic links resolve to present PDFs, and files outside the active manifest are excluded.
+- [x] **Step 2: Run** `python -m unittest tests.test_build_site_bundle -v`; confirm new bundle tests fail.
+- [x] **Step 3: Implement** deterministic assembly into a clean directory; fail if an active product lacks any of its five language PDFs/HTML.
+- [x] **Step 4: Run** `python -m unittest tests.test_build_site_bundle -v`; verify output counts, hashes, and links.
 
 ### Task 5: Publish Drive files, move intake originals, and finalize manifest safely
 
