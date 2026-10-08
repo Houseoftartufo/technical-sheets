@@ -4,17 +4,20 @@ import mimetypes
 import os
 from pathlib import Path
 
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
 
 ROOT = Path(__file__).resolve().parents[1]
 GENERATED_ROOT = Path(os.environ.get("DRIVE_GENERATED_DIR", ROOT))
 CATALOG_ID = os.environ.get("DRIVE_CATALOG_FOLDER_ID") or "1vEyctBT3z9F5-hFM-DeTWEsjaY2I8drb"
 SCOPES = ["https://www.googleapis.com/auth/drive"]
+EMPTY_FOLDER_ALIASES = {
+    "28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO": ("CARPACCIO_DI_TARTUFO_ESTIVO",),
+}
 
 
 def drive_client():
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+
     raw = os.environ.get("GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON")
     if not raw:
         raise RuntimeError("GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON is not configured")
@@ -43,6 +46,19 @@ def ensure_product_folder(drive, folder):
     folders = child_items(drive, CATALOG_ID, folder, "application/vnd.google-apps.folder")
     if folders:
         return folders[0]["id"]
+    for alias in EMPTY_FOLDER_ALIASES.get(folder, ()):
+        candidates = child_items(drive, CATALOG_ID, alias, "application/vnd.google-apps.folder")
+        for candidate in candidates:
+            children = drive.files().list(
+                q=f"'{candidate['id']}' in parents and trashed = false", pageSize=1,
+                fields="files(id)", supportsAllDrives=True, includeItemsFromAllDrives=True,
+            ).execute().get("files", [])
+            if not children:
+                drive.files().update(
+                    fileId=candidate["id"], body={"name": folder}, fields="id",
+                    supportsAllDrives=True,
+                ).execute()
+                return candidate["id"]
     return drive.files().create(
         body={"name": folder, "mimeType": "application/vnd.google-apps.folder", "parents": [CATALOG_ID]},
         fields="id", supportsAllDrives=True,
@@ -50,6 +66,8 @@ def ensure_product_folder(drive, folder):
 
 
 def upsert_file(drive, parent_id, path):
+    from googleapiclient.http import MediaFileUpload
+
     query = f"'{parent_id}' in parents and trashed = false and name = '{escaped(path.name)}'"
     matches = drive.files().list(q=query, pageSize=10, fields="files(id)", supportsAllDrives=True,
                                  includeItemsFromAllDrives=True).execute().get("files", [])
