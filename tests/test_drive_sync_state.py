@@ -92,14 +92,14 @@ class DriveSyncStateTest(unittest.TestCase):
         self.assertIn("Multiple supplier files", error)
         self.assertEqual(second["folder"], "28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO")
 
-    def test_new_supplier_duplicate_gets_separate_folder_from_unchanged_source(self):
+    def test_new_supplier_collision_with_unchanged_source_blocks_for_classification(self):
         product = {"folder": "28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO"}
         folder, error = resolve_output_folder(
             product, set(), {}, {"28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO"}
         )
-        self.assertIsNone(error)
-        self.assertEqual(folder, "DUPLICATE_28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO")
-        self.assertEqual(product["duplicate_of"], "28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO")
+        self.assertIsNone(folder)
+        self.assertIn("collision", error.lower())
+        self.assertEqual(product, {"folder": "28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO"})
 
     def test_content_hash_tracks_source_and_ignores_drive_file_id(self):
         a = {"id": "one", "name": "sheet.pdf", "md5Checksum": "abc", "mimeType": "application/pdf"}
