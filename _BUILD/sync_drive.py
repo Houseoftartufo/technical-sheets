@@ -54,16 +54,51 @@ def download(drive, item):
 
 def extract(client, item, content):
     uploaded = client.files.create(file=(item["name"], content), purpose="user_data")
+    def localized_schema():
+        return {
+            "type": "object",
+            "properties": {language: {"type": "string"} for language in LANGS},
+            "required": list(LANGS),
+            "additionalProperties": False,
+        }
+
+    def object_schema(properties):
+        return {
+            "type": "object",
+            "properties": properties,
+            "required": list(properties),
+            "additionalProperties": False,
+        }
+
     schema = {
         "type": "object", "additionalProperties": False,
         "properties": {
             "folder": {"type": "string"},
-            "title": {"type": "object", "additionalProperties": {"type": "string"}},
-            "general": {"type": "object", "additionalProperties": True},
-            "ingredients": {"type": "object", "additionalProperties": True},
-            "storage": {"type": "object", "additionalProperties": True},
-            "nutrition": {"type": "object", "additionalProperties": {"type": "string"}},
-            "characteristics": {"type": "object", "additionalProperties": True},
+            "title": localized_schema(),
+            "general": object_schema({
+                "ean": {"type": "string"},
+                "typology": localized_schema(),
+                "shelf": localized_schema(),
+                "packaging": localized_schema(),
+                "labelling": localized_schema(),
+                "gmo": localized_schema(),
+            }),
+            "ingredients": object_schema({
+                "ingredients": localized_schema(),
+                "allergens": localized_schema(),
+            }),
+            "storage": object_schema({
+                "instructions": localized_schema(),
+                "method": localized_schema(),
+            }),
+            "nutrition": object_schema({
+                name: {"type": "string"}
+                for name in ("energy", "fat", "sat", "carb", "sugar", "protein", "salt", "fibre")
+            }),
+            "characteristics": object_schema({
+                "chemical": localized_schema(),
+                "micro": localized_schema(),
+            }),
         },
         "required": ["folder", "title", "general", "ingredients", "storage", "nutrition", "characteristics"],
     }
