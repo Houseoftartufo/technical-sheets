@@ -19,6 +19,9 @@ def drive_client():
     if not raw:
         raise RuntimeError("GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON is not configured")
     credentials = service_account.Credentials.from_service_account_info(json.loads(raw), scopes=SCOPES)
+    impersonated_user = os.environ.get("GOOGLE_DRIVE_IMPERSONATED_USER")
+    if impersonated_user:
+        credentials = credentials.with_subject(impersonated_user)
     return build("drive", "v3", credentials=credentials, cache_discovery=False)
 
 
