@@ -49,6 +49,7 @@ class GermanSupportTests(unittest.TestCase):
             self.assertIn("Produkt suchen...", html)
             self.assertEqual(html.count("_DE.pdf"), 27)
             self.assertIn('<button data-l="ITA" class="active">ITA</button>', html)
+            self.assertNotIn('target="_blank"', html)
 
     def test_engine_generates_only_requested_german_artifacts(self):
         with tempfile.TemporaryDirectory() as temp_dir:

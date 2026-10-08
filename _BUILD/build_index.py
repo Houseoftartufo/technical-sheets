@@ -14,7 +14,7 @@ for d in folders:
     tt=titles.get(d,{})
     search=" ".join(tt.get(L,"") for L in LANGS).lower().replace('"',"")
     data=" ".join('data-%s="%s"'%(L.lower(),esc(tt.get(L,d))) for L in LANGS)
-    links="".join('<a class="lang" href="%s/%s_%s.pdf" target="_blank">%s</a>'%(d,d,L,L) for L in LANGS)
+    links="".join('<a class="lang" href="%s/%s_%s.pdf">%s</a>'%(d,d,L,L) for L in LANGS)
     cards.append('<div class="card" data-name="%s"><div class="num">%s</div><div class="pname" %s>%s</div><div class="langs">%s</div></div>'%(search,d[:2],data,esc(tt.get("ITA",d)),links))
 UI={"ITA":["Cerca un prodotto...","di %d prodotti"%len(folders),"Nessun prodotto trovato","Schede Tecniche Prodotti"],
     "FR":["Rechercher un produit...","sur %d produits"%len(folders),"Aucun produit trouve","Fiches Techniques Produits"],
