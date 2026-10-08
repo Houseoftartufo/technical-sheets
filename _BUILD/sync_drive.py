@@ -172,7 +172,8 @@ def prepare(drive, source_id, processed_id, manifest, client, build_dir=BUILD, r
         plan = {
             "status": "blocked", "changed_pending": [], "changed_active": [], "imported": {},
             "unchanged": [], "removed_source_ids": [], "removed_folders": [],
-            "move_source_ids": [], "next_manifest": manifest, "active_products": {}, "errors": errors,
+            "move_source_ids": [], "source_folder_id": source_id, "processed_folder_id": processed_id,
+            "next_manifest": manifest, "active_products": {}, "errors": errors,
         }
         write_plan_files(run_dir, plan)
         return plan
@@ -250,6 +251,7 @@ def prepare(drive, source_id, processed_id, manifest, client, build_dir=BUILD, r
         "removed_source_ids": state["removed_source_ids"],
         "removed_folders": removed_folders,
         "move_source_ids": sorted(item["id"] for item in pending),
+        "source_folder_id": source_id, "processed_folder_id": processed_id,
         "next_manifest": next_manifest,
         "active_products": active_products,
         "errors": errors,
