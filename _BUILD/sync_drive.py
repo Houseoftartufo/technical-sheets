@@ -50,7 +50,7 @@ def list_sources(drive):
 
 
 def download(drive, item):
-    request = drive.files().get_media(fileId=item["id"])
+    request = drive.files().get_media(fileId=item["id"], supportsAllDrives=True)
     from io import BytesIO
     buffer = BytesIO()
     downloader = MediaIoBaseDownload(buffer, request)
@@ -129,7 +129,9 @@ def extract(client, item, content):
 
 def main():
     drive = drive_client()
-    catalog = drive.files().get(fileId=CATALOG_ID, fields="id,name,driveId").execute()
+    catalog = drive.files().get(
+        fileId=CATALOG_ID, fields="id,name,driveId", supportsAllDrives=True,
+    ).execute()
     if not catalog.get("driveId") and not os.environ.get("GOOGLE_DRIVE_IMPERSONATED_USER"):
         raise SystemExit(
             "The catalog folder is in My Drive, but service accounts have no Drive storage quota. "
