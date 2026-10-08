@@ -1,6 +1,7 @@
 """Assemble a complete static-site bundle from legacy files and active Drive products."""
 from io import BytesIO
 import json
+import os
 from pathlib import Path
 import shutil
 import tempfile
@@ -113,3 +114,60 @@ def assemble_site_bundle(repo_root, generated_root, active_products, drive, cata
             "--dynamic-products", str(metadata),
         ])
     return output_root
+
+
+def main():
+    from sync_drive import drive_client, load_manifest_bytes
+    from publish_drive import download_drive_file
+
+    repo_root = Path(__file__).resolve().parents[1]
+    run_dir = Path(os.environ["DRIVE_RUN_DIR"])
+    output_root = Path(os.environ["SITE_BUNDLE_DIR"])
+    catalog_id = os.environ["DRIVE_CATALOG_FOLDER_ID"]
+    drive = drive_client()
+    manifest_matches = drive.files().list(
+        q=f"'{catalog_id}' in parents and trashed = false and name = '.technical-sheets-manifest.json'",
+        pageSize=10, fields="files(id,name)", supportsAllDrives=True, includeItemsFromAllDrives=True,
+    ).execute().get("files", [])
+    if len(manifest_matches) > 1:
+        raise RuntimeError("Multiple Drive sync manifests found")
+    plan = json.loads((run_dir / "drive_sync_plan.json").read_text(encoding="utf-8"))
+    if plan.get("status") != "ready":
+        raise RuntimeError("Cannot assemble bundle for blocked Drive plan")
+    manifest = load_manifest_bytes(download_drive_file(drive, manifest_matches[0])) if manifest_matches else plan["next_manifest"]
+    active = plan["active_products"]
+    # Existing v1 entries without localized titles are migrated from their stored output HTML.
+    from html.parser import HTMLParser
+    class TitleParser(HTMLParser):
+        def __init__(self):
+            super().__init__(); self.in_title=False; self.value=[]
+        def handle_starttag(self, tag, attrs):
+            if tag == "div" and ("product-title" in dict(attrs).get("class", "").split()): self.in_title=True
+        def handle_endtag(self, tag):
+            if tag == "div" and self.in_title: self.in_title=False
+        def handle_data(self, data):
+            if self.in_title: self.value.append(data)
+    for entry in manifest.get("products", {}).values():
+        folder=entry.get("folder")
+        if folder and folder in active and not all(entry.get("title", {}).get(lang) for lang in LANGS):
+            localized={}
+            for lang in LANGS:
+                query=f"'{catalog_id}' in parents and trashed = false and name = '{folder}' and mimeType = '{FOLDER_MIME}'"
+                matches=drive.files().list(q=query,pageSize=10,fields="files(id)",supportsAllDrives=True,includeItemsFromAllDrives=True).execute().get("files",[])
+                if len(matches)!=1: raise RuntimeError(f"Cannot migrate titles for {folder}: product folder missing or ambiguous")
+                child=drive.files().list(q=f"'{matches[0]['id']}' in parents and trashed = false and name = '{folder}_{lang}.html'",pageSize=10,fields="files(id,name)",supportsAllDrives=True,includeItemsFromAllDrives=True).execute().get("files",[])
+                if len(child)!=1: raise RuntimeError(f"Cannot migrate title for {folder} {lang}")
+                html=download_drive_file(drive,child[0]).decode("utf-8")
+                parser=TitleParser(); parser.feed(html); localized[lang]="".join(parser.value).strip()
+            if not all(localized.values()): raise RuntimeError(f"Cannot extract all localized titles for {folder}")
+            entry["title"]=localized
+            active[folder]=localized
+    plan["next_manifest"]=manifest
+    plan["active_products"]=active
+    (run_dir / "drive_sync_plan.json").write_text(json.dumps(plan,ensure_ascii=False,indent=2),encoding="utf-8")
+    assemble_site_bundle(repo_root, Path(os.environ["DRIVE_GENERATED_DIR"]), active, drive, catalog_id, output_root)
+    print(f"Validated Vercel bundle with {len(active)} managed products")
+
+
+if __name__ == "__main__":
+    main()
