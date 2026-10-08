@@ -108,6 +108,22 @@ class PublishDriveTests(unittest.TestCase):
         self.assertEqual(manifest_event[0], "update")
         self.assertEqual(result["manifest_file_id"], "manifest")
 
+    def test_retry_is_idempotent_after_source_move_and_manifest_update(self):
+        drive=FakeDrive()
+        source={"id":"source","name":"new.pdf","mimeType":"application/pdf","parents":["intake"]}
+        drive.items.append(source)
+        plan={"status":"ready","imported":{"28_NEW":{}},"removed_folders":[],"move_source_ids":["source"],"source_folder_id":"intake","next_manifest":{"version":2,"products":{"source":{"folder":"28_NEW"}},"legacy_folders":[]}}
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); folder=root/"28_NEW"; folder.mkdir(); (folder/"28_NEW_ITA.pdf").write_bytes(b"pdf")
+            first=apply(drive,plan,root,"catalog","processed",None)
+            second=apply(drive,plan,root,"catalog","processed",first["manifest_file_id"])
+        product_folders=[x for x in drive.items if x.get("name")=="28_NEW" and x.get("mimeType")==FOLDER_MIME]
+        product_files=[x for x in drive.items if x.get("name")=="28_NEW_ITA.pdf"]
+        self.assertEqual(len(product_folders),1)
+        self.assertEqual(len(product_files),1)
+        self.assertEqual(next(x for x in drive.items if x["id"]=="source")["parents"],["processed"])
+        self.assertEqual(second["manifest_file_id"],first["manifest_file_id"])
+
     def test_manifest_is_not_written_if_any_upsert_fails(self):
         class FailingDrive(FakeDrive):
             def files(self):
