@@ -31,7 +31,7 @@ ricostruite dai testi originali italiani Sassone con traduzioni B2B e dati verba
 ## Schede originali fornitori
 - Cartella Drive sorgente: [SCHEDE ORIGINALI FORNITORI - DA ELABORARE](https://drive.google.com/drive/folders/1Y1qgl2rih8Ikbjf6ch4CgG5Qtwg6k6hS).
 - Il workflow `.github/workflows/sync-drive.yml` legge PDF/DOCX, estrae i campi con OCR, traduce nelle cinque lingue e passa i dati a `_BUILD/engine.py`.
-- Configurare i secret GitHub `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON` e `OPENAI_API_KEY`, oltre alle variabili `DRIVE_SOURCE_FOLDER_ID` (cartella input) e `DRIVE_CATALOG_FOLDER_ID` (cartella catalogo ufficiale; `1vEyctBT3z9F5-hFM-DeTWEsjaY2I8drb`).
+- Configurare i secret GitHub `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON`, `OPENAI_API_KEY`, `DRIVE_SOURCE_FOLDER_ID` (cartella input) e `DRIVE_CATALOG_FOLDER_ID` (cartella catalogo ufficiale; `1vEyctBT3z9F5-hFM-DeTWEsjaY2I8drb`).
 - Condividere la cartella sorgente con l'indirizzo email del service account indicato nel JSON GitHub.
 - Un prodotto già presente viene pubblicato come `DUPLICATE_...` con evidenziazione blu nell'indice; i campi assenti restano vuoti.
 - La sincronizzazione automatica avviene ogni 15 minuti e aggiorna `main` solo dopo validazione.
