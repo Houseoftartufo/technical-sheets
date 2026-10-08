@@ -35,6 +35,6 @@ ricostruite dai testi originali italiani Sassone con traduzioni B2B e dati verba
 - Condividere la cartella sorgente con l'indirizzo email del service account indicato nel JSON GitHub.
 - Un prodotto già presente viene pubblicato come `DUPLICATE_...` con evidenziazione blu nell'indice; i campi assenti restano vuoti.
 - La sincronizzazione automatica avviene ogni 15 minuti e aggiorna `main` solo dopo validazione.
-- Dopo la validazione il job carica/aggiorna in Drive le cartelle prodotto con tutti gli HTML/PDF generati; le rimozioni vengono spostate nel cestino Drive.
+- Dopo la validazione il job genera HTML/PDF in uno spazio temporaneo dell'esecuzione e carica/aggiorna in Drive le cartelle prodotto; le rimozioni gestite vengono spostate nel cestino Drive. Le schede già presenti nel repository e sul sito non vengono rigenerate o cancellate dal job.
 
 Aggiornato: 06/06/2026

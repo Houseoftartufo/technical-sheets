@@ -9,6 +9,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 ROOT = Path(__file__).resolve().parents[1]
+GENERATED_ROOT = Path(os.environ.get("DRIVE_GENERATED_DIR", ROOT))
 CATALOG_ID = os.environ.get("DRIVE_CATALOG_FOLDER_ID") or "1vEyctBT3z9F5-hFM-DeTWEsjaY2I8drb"
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 
@@ -70,7 +71,7 @@ def main():
     removed = json.loads(removed_path.read_text(encoding="utf-8")) if removed_path.exists() else []
     published = []
     for folder in sorted(products):
-        product_dir = ROOT / folder
+        product_dir = GENERATED_ROOT / folder
         if not product_dir.is_dir():
             raise RuntimeError(f"Generated product folder is missing: {folder}")
         drive_folder = ensure_product_folder(drive, folder)
