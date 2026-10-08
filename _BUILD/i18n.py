@@ -43,6 +43,13 @@ def _set(mapping, path, value):
 
 def add_german(product):
     product = deepcopy(product)
+    if all(
+        isinstance(_get(product, path), dict)
+        and all(language in _get(product, path) for language in LANGS)
+        for path in LOCALIZED_PATHS
+    ):
+        return product
+
     folder = product["folder"]
     if folder not in DE_TRANSLATIONS:
         raise ValueError(f"Missing German translation for {folder}")
@@ -63,6 +70,8 @@ def add_german(product):
 def load_products_file(path):
     path = Path(path)
     products = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(products, dict):
+        products = list(products.values())
     return [add_german(product) for product in products]
 
 
@@ -71,8 +80,33 @@ def load_all_products(build_dir):
     products = []
     for filename in DATA_FILES:
         products.extend(load_products_file(build_dir / filename))
-    if set(DE_TRANSLATIONS) != {product["folder"] for product in products}:
+    base_folders = {product["folder"] for product in products}
+    if set(DE_TRANSLATIONS) != base_folders:
         raise ValueError("German translation set does not match the 27 source products")
+
+    overrides_path = build_dir / "product_overrides.json"
+    if overrides_path.exists():
+        overrides = json.loads(overrides_path.read_text(encoding="utf-8"))
+        if not isinstance(overrides, dict):
+            raise ValueError("product_overrides.json must contain an object keyed by product folder")
+        positions = {product["folder"]: index for index, product in enumerate(products)}
+        for folder, product in overrides.items():
+            if product.get("folder") != folder:
+                raise ValueError(f"Product override key does not match its folder: {folder}")
+            product = add_german(product)
+            if folder in positions:
+                products[positions[folder]] = product
+            else:
+                positions[folder] = len(products)
+                products.append(product)
+
+    removed_path = build_dir / "removed_products.json"
+    if removed_path.exists():
+        removed = json.loads(removed_path.read_text(encoding="utf-8"))
+        if not isinstance(removed, list) or not all(isinstance(folder, str) for folder in removed):
+            raise ValueError("removed_products.json must be a list of product folder names")
+        removed_set = set(removed)
+        products = [product for product in products if product["folder"] not in removed_set]
     return products
 
 
