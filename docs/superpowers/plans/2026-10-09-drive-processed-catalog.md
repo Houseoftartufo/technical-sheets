@@ -107,10 +107,10 @@
 - Produces: `apply(drive, plan: dict, generated_root: Path, catalog_id: str, processed_id: str, manifest_file_id: str | None) -> dict`, which upserts changed output folders, trashes only manifest-owned removed folders, moves processed intake IDs to ELABORATE without changing IDs, and writes v2 manifest only after operations succeed.
 - Operations are idempotent; report partial failures so the next run reconciles actual Drive state.
 
-- [ ] **Step 1: Write fake-Drive tests** for upsert, product-specific trash, preserved legacy/unmanaged folders, same-ID parent move, and failure before final manifest write.
-- [ ] **Step 2: Run** `python -m unittest tests.test_publish_drive -v`; confirm new behavior fails.
-- [ ] **Step 3: Implement** ordered Drive mutations and manifest storage as a metadata JSON in the catalog folder; remove Git manifest commits and never delete by name without manifest ownership.
-- [ ] **Step 4: Run** `python -m unittest tests.test_publish_drive tests.test_drive_sync_state -v`; verify retry idempotency and legacy preservation.
+- [x] **Step 1: Write fake-Drive tests** for upsert, product-specific trash, preserved legacy/unmanaged folders, same-ID parent move, and failure before final manifest write.
+- [x] **Step 2: Run** `python -m unittest tests.test_publish_drive -v`; confirm new behavior fails.
+- [x] **Step 3: Implement** ordered Drive mutations and manifest storage as a metadata JSON in the catalog folder; remove Git manifest commits and never delete by name without manifest ownership.
+- [x] **Step 4: Run** `python -m unittest tests.test_publish_drive tests.test_drive_sync_state -v`; verify retry idempotency and legacy preservation.
 
 ### Task 6: Orchestrate preview and production deployment in GitHub Actions
 
@@ -123,11 +123,11 @@
 - Produces: triggers on schedule, workflow_dispatch, and push to main; serializes publication; deploys and smoke-tests a Vercel preview before production (index plus every active dynamic PDF URL); finalizes Drive only after valid bundle/deployment; always uploads a report including deployment URL and partial-step status.
 - Adds secret VERCEL_TOKEN and variables VERCEL_ORG_ID and VERCEL_PROJECT_ID. Existing Drive/OpenAI secrets remain. No generated file or manifest is committed to main.
 
-- [ ] **Step 1: Write config tests** for triggers, serialization, least permissions, Vercel env names, preview-before-production order, and absence of commits/pushes of generated outputs/state.
-- [ ] **Step 2: Run** `python -m unittest tests.test_workflow_config -v`; confirm failure on current workflow.
-- [ ] **Step 3: Implement** prepare, generate, bundle validation, preview, production, Drive finalization, and always-upload-report stages. Pin Vercel CLI and deploy the same validated bundle.
-- [ ] **Step 4: Document** the Vercel setting that prevents Git-only deployment from overwriting the dynamic catalog; list exact GitHub Secret/Variable names and manual-run steps.
-- [ ] **Step 5: Run** `python -m unittest tests.test_workflow_config -v` and git diff --check; confirm docs and config agree.
+- [x] **Step 1: Write config tests** for triggers, serialization, least permissions, Vercel env names, preview-before-production order, and absence of commits/pushes of generated outputs/state.
+- [x] **Step 2: Run** `python -m unittest tests.test_workflow_config -v`; confirm failure on current workflow.
+- [x] **Step 3: Implement** prepare, generate, bundle validation, preview, production, Drive finalization, and always-upload-report stages. Pin Vercel CLI and deploy the same validated bundle.
+- [x] **Step 4: Document** the Vercel setting that prevents Git-only deployment from overwriting the dynamic catalog; list exact GitHub Secret/Variable names and manual-run steps.
+- [x] **Step 5: Run** `python -m unittest tests.test_workflow_config -v` and git diff --check; confirm docs and config agree.
 
 ### Task 7: Migrate Carpaccio in oil and verify lifecycle
 
@@ -139,11 +139,11 @@
 - Consumes: APIs from Tasks 1–6 and existing v1 Carpaccio-in-oil manifest entry.
 - Produces: one-time v2 manifest migration using existing Drive HTML/PDF to populate localized title metadata, without replacing current output bytes; onboarding instructions for DA_ELABORARE and ELABORATE.
 
-- [ ] **Step 1: Write integration tests** for new product, replacement, active product removal, failed extraction, Carpaccio migration, and no-change run.
-- [ ] **Step 2: Run** `python -m unittest tests.test_drive_site_sync -v`; confirm migration/lifecycle cases fail.
-- [ ] **Step 3: Implement** migration of existing source/output while preserving current 27 static products and existing managed output.
-- [ ] **Step 4: Run** `python -m unittest discover -s tests -v` and `node --test tests/search.test.js`; require all tests to pass.
-- [ ] **Step 5: In a non-production test folder**, verify add/replace/remove through real Drive and Vercel preview; record all 270 legacy SHA-256 hashes before/after and require exact matches.
+- [x] **Step 1: Write integration tests** for new product, replacement, active product removal, failed extraction, Carpaccio migration, and no-change run.
+- [x] **Step 2: Run** `python -m unittest tests.test_drive_site_sync -v`; confirm migration/lifecycle cases fail.
+- [x] **Step 3: Implement** migration of existing source/output while preserving current 27 static products and existing managed output.
+- [x] **Step 4: Run** `python -m unittest discover -s tests -v` and `node --test tests/search.test.js`; require all tests to pass.
+- [ ] **Step 5: In a non-production test folder**, verify add/replace/remove through real Drive and Vercel preview; record all 270 legacy SHA-256 hashes before/after and require exact matches. Pending: repository has no Vercel token/org/project credentials yet.
 - [ ] **Step 6: Review** full diff, confirm originals/generated outputs are absent from Git, and capture production workflow result before enabling official sync.
 
 ---
