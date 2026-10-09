@@ -84,6 +84,17 @@ def valid_product(folder="28_NEW"):
 
 
 class SyncDriveTests(unittest.TestCase):
+    def test_source_listing_follows_pagination_to_prevent_false_removals(self):
+        class PaginatedFiles:
+            def list(self, **kwargs):
+                if kwargs.get("pageToken") == "next":
+                    return Request({"files": [{"id": "source-2", "mimeType": "application/pdf"}]})
+                return Request({"files": [{"id": "source-1", "mimeType": "application/pdf"}], "nextPageToken": "next"})
+        class PaginatedDrive:
+            def files(self): return PaginatedFiles()
+        self.assertEqual([item["id"] for item in sync_drive.list_source_items(PaginatedDrive(), "folder")],
+                         ["source-1", "source-2"])
+
     def test_processed_folder_is_created_as_sibling_and_reused(self):
         drive = FakeDrive([{
             "id": "intake", "name": "DA_ELABORARE", "mimeType": "application/vnd.google-apps.folder",

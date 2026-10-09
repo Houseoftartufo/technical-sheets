@@ -41,13 +41,20 @@ def drive_client():
 
 
 def list_source_items(drive, folder_id):
-    response = drive.files().list(
-        q="'%s' in parents and trashed = false" % folder_id,
-        pageSize=1000, fields="files(id,name,mimeType,modifiedTime,md5Checksum,size,parents)",
-        orderBy="name", supportsAllDrives=True, includeItemsFromAllDrives=True,
-    ).execute()
-    return [item for item in response.get("files", [])
-            if item.get("mimeType") != "application/vnd.google-apps.folder"]
+    items = []
+    page_token = None
+    while True:
+        response = drive.files().list(
+            q="'%s' in parents and trashed = false" % folder_id,
+            pageSize=1000, pageToken=page_token,
+            fields="nextPageToken,files(id,name,mimeType,modifiedTime,md5Checksum,size,parents)",
+            orderBy="name", supportsAllDrives=True, includeItemsFromAllDrives=True,
+        ).execute()
+        items.extend(response.get("files", []))
+        page_token = response.get("nextPageToken")
+        if not page_token:
+            break
+    return [item for item in items if item.get("mimeType") != "application/vnd.google-apps.folder"]
 
 
 def list_sources(drive, folder_id=FOLDER_ID):
