@@ -106,7 +106,7 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
-        run: vercel link --project "$VERCEL_PROJECT_ID" --scope "$VERCEL_ORG_ID" --yes
+        run: vercel link --project "$VERCEL_PROJECT_ID" --scope "$VERCEL_ORG_ID" --yes --token "$VERCEL_TOKEN"
       - name: Deploy Vercel preview
         if: steps.prepare.outputs.has_changes == 'true'
         id: preview
@@ -115,7 +115,7 @@ jobs:
           VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
         run: |
-          url=$(vercel deploy "$SITE_BUNDLE_DIR" --yes)
+          url=$(vercel deploy "$SITE_BUNDLE_DIR" --yes --token "$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           python - "$DRIVE_RUN_DIR/drive_sync_report.json" "$url" <<'PY'
           import json, sys
@@ -154,7 +154,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
           DRIVE_RUN_DIR: /tmp/technical-sheets-run
         run: |
-          url=$(vercel deploy "$SITE_BUNDLE_DIR" --prod --yes)
+          url=$(vercel deploy "$SITE_BUNDLE_DIR" --prod --yes --token "$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           python - "$DRIVE_RUN_DIR/drive_sync_report.json" "$url" <<'PY'
           import json, sys
