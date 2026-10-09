@@ -29,6 +29,9 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("VERCEL_TOKEN", self.readme)
         self.assertIn("VERCEL_ORG_ID", self.readme)
         self.assertIn("VERCEL_PROJECT_ID", self.readme)
+        self.assertIn("VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}", self.workflow)
+        self.assertIn("VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}", self.workflow)
+        self.assertNotIn("vercel link", self.workflow)
 
     def test_preview_smoke_precedes_production_and_drive_finalization(self):
         preview = self.workflow.index("Deploy Vercel preview")
