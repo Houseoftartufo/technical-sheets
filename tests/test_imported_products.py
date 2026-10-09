@@ -37,6 +37,17 @@ class ImportedProductsTest(unittest.TestCase):
         self.assertEqual(loaded[0]["title"]["DE"], "Test DE")
         self.assertEqual(loaded[0]["ingredients"]["ingredients"]["DE"], "ingredient DE")
 
+    def test_loader_accepts_supplier_product_without_optional_characteristics(self):
+        product = imported_product()
+        product.pop("characteristics")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "supplier.json"
+            path.write_text(json.dumps([product]), encoding="utf-8")
+
+            loaded = load_products_file(path)
+
+        self.assertNotIn("characteristics", loaded[0])
+
 
 if __name__ == "__main__":
     unittest.main()
