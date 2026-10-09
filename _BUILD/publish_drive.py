@@ -135,6 +135,36 @@ def _validate_plan(plan):
         raise ValueError("Drive sync plan has no valid v2 manifest")
     if plan.get("move_source_ids") and not plan.get("source_folder_id"):
         raise ValueError("Drive sync plan is missing its intake folder ID")
+    if not isinstance(plan.get("rename_sources", []), list):
+        raise ValueError("Drive sync plan has invalid source rename operations")
+
+
+def _validate_source_renames(drive, plan, processed_id):
+    operations = plan.get("rename_sources", [])
+    target_names = [operation.get("to_name") for operation in operations]
+    if any(not name for name in target_names) or len(target_names) != len(set(target_names)):
+        raise RuntimeError("Source rename plan contains an empty or duplicate managed filename")
+    source_ids = set()
+    validated = []
+    for operation in operations:
+        source_id = operation.get("id")
+        original = operation.get("from_name")
+        target = operation.get("to_name")
+        if not source_id or not original or source_id in source_ids:
+            raise RuntimeError("Source rename plan contains an invalid or duplicate source ID")
+        source_ids.add(source_id)
+        item = drive.files().get(fileId=source_id, fields="id,name,parents", supportsAllDrives=True).execute()
+        if item.get("name") not in {original, target}:
+            raise RuntimeError(f"Source {source_id} changed after planning; refusing to rename it")
+        parents = item.get("parents", [])
+        expected_parent = plan.get("source_folder_id") if source_id in set(plan.get("move_source_ids", [])) else processed_id
+        if expected_parent not in parents and not (item.get("name") == target and processed_id in parents):
+            raise RuntimeError(f"Source {source_id} is no longer in its expected managed folder")
+        collisions = child_items(drive, processed_id, target)
+        if any(match["id"] != source_id for match in collisions):
+            raise RuntimeError(f"Drive source filename collision in ELABORATE: {target}")
+        validated.append((source_id, original, target))
+    return validated
 
 
 def apply(drive, plan, generated_root, catalog_id, processed_id, manifest_file_id=None):
@@ -161,6 +191,7 @@ def apply(drive, plan, generated_root, catalog_id, processed_id, manifest_file_i
         unsafe = sorted((removed_candidates - next_owned) - owned_folders)
         if unsafe:
             raise RuntimeError("Removal requested for folders not owned by the sync manifest: " + ", ".join(unsafe))
+    rename_operations = _validate_source_renames(drive, plan, processed_id)
 
     published = []
     for folder in sorted(plan.get("imported", {})):
@@ -191,12 +222,23 @@ def apply(drive, plan, generated_root, catalog_id, processed_id, manifest_file_i
                              fields="id,parents", supportsAllDrives=True).execute()
         moved.append(source_id)
 
+    renamed = []
+    for source_id, original, target in rename_operations:
+        item = drive.files().get(fileId=source_id, fields="id,name,parents", supportsAllDrives=True).execute()
+        if item.get("name") == target:
+            continue
+        if item.get("name") != original or processed_id not in item.get("parents", []):
+            raise RuntimeError(f"Source {source_id} changed during finalize; refusing to overwrite its name")
+        drive.files().update(fileId=source_id, body={"name": target}, fields="id,name", supportsAllDrives=True).execute()
+        renamed.append({"id": source_id, "name": target})
+
     if existing_manifest_id and previous_manifest == next_manifest:
         saved_manifest_id = existing_manifest_id
     else:
         saved_manifest_id = _upsert_manifest(drive, catalog_id, next_manifest, existing_manifest_id)
     return {"published_to_drive": published, "trashed": trashed, "moved_source_ids": moved,
-            "manifest_file_id": saved_manifest_id, "active_product_folders": sorted(active_folders)}
+            "renamed_sources": renamed, "manifest_file_id": saved_manifest_id,
+            "active_product_folders": sorted(active_folders)}
 
 
 def main():

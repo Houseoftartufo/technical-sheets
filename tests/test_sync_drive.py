@@ -95,6 +95,20 @@ class SyncDriveTests(unittest.TestCase):
         self.assertEqual([item["id"] for item in sync_drive.list_source_items(PaginatedDrive(), "folder")],
                          ["source-1", "source-2"])
 
+    def test_configured_processed_folder_is_used_without_creating_sibling(self):
+        processed = {"id": "processed", "name": "ELABORATE", "mimeType": "application/vnd.google-apps.folder", "parents": ["other-root"]}
+        intake = {"id": "intake", "name": "DA_ELABORARE", "mimeType": "application/vnd.google-apps.folder", "parents": ["shared-root"]}
+        drive = FakeDrive([processed, intake])
+        found = sync_drive.ensure_processed_folder(drive, "intake", "processed")
+        self.assertEqual(found["id"], "processed")
+        self.assertEqual(drive.mutations, 0)
+
+    def test_configured_processed_folder_must_be_a_folder(self):
+        drive = FakeDrive([{"id": "not-folder", "name": "ELABORATE.pdf", "mimeType": "application/pdf"}])
+        with self.assertRaisesRegex(RuntimeError, "must be a Drive folder"):
+            sync_drive.ensure_processed_folder(drive, "intake", "not-folder")
+        self.assertEqual(drive.mutations, 0)
+
     def test_processed_folder_is_created_as_sibling_and_reused(self):
         drive = FakeDrive([{
             "id": "intake", "name": "DA_ELABORARE", "mimeType": "application/vnd.google-apps.folder",
@@ -131,6 +145,31 @@ class SyncDriveTests(unittest.TestCase):
             self.assertEqual(saved["move_source_ids"], ["pending"])
         self.assertEqual(drive.mutations, 0)
         self.assertEqual(pending["parents"], ["intake"])
+
+    def test_bootstrap_registers_27_static_sources_generates_only_oil_carpaccio_and_leaves_duplicate_in_intake(self):
+        mapping = sync_drive.load_baseline_mapping(sync_drive.BUILD / "drive_baseline_mapping.json")["sources"]
+        active = [{"id": f"active-{i}", "name": name, "mimeType": "application/pdf",
+                   "md5Checksum": f"hash-{i}", "size": str(i), "parents": ["processed"]}
+                  for i, name in enumerate(mapping)]
+        oil = next(item for item in active if item["name"].startswith("Carpaccio di tartufo estivo"))
+        duplicate = {**oil, "id": "intake-copy", "parents": ["intake"]}
+        drive = FakeDrive(active + [duplicate])
+        with tempfile.TemporaryDirectory() as temp, \
+             patch.object(sync_drive, "download", return_value=b"pdf"), \
+             patch.object(sync_drive, "extract", return_value=valid_product()) as extract:
+            plan = sync_drive.prepare(drive, "intake", "processed", {"version": 2, "products": {}},
+                                      object(), run_dir=Path(temp), bootstrap_mapping={"sources": mapping})
+
+        self.assertEqual(plan["status"], "ready")
+        self.assertTrue(plan["bootstrap"])
+        self.assertEqual(set(plan["imported"]), {"28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO"})
+        self.assertEqual(len(plan["unchanged"]), 27)
+        self.assertEqual(len(plan["rename_sources"]), 28)
+        self.assertEqual([item["id"] for item in plan["duplicate_sources"]], ["intake-copy"])
+        self.assertEqual(plan["move_source_ids"], [])
+        self.assertEqual(duplicate["parents"], ["intake"])
+        extract.assert_called_once()
+        self.assertEqual(drive.mutations, 0)
 
     def test_incomplete_required_translation_blocks_but_blank_ean_is_allowed(self):
         product = valid_product()

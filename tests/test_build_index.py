@@ -37,6 +37,22 @@ class BuildIndexTests(unittest.TestCase):
         self.assertEqual(len(re.findall(r'<div class="card(?: |")', html)), 27)
         self.assertNotIn("28_TEST", html)
 
+    def test_static_products_can_be_filtered_by_authoritative_manifest(self):
+        with tempfile.TemporaryDirectory() as temp:
+            site = Path(temp) / "site"
+            self.make_site_root(site)
+            all_folders = sorted(path.name for path in site.iterdir() if path.is_dir())
+            removed = all_folders[0]
+            (site / removed).rmdir()
+            active = Path(temp) / "active-static.json"
+            active.write_text(json.dumps([folder for folder in all_folders if folder != removed]), encoding="utf-8")
+            output = site / "index.html"
+            self.run_builder("--output", output, "--site-root", site, "--static-products", active)
+            html = output.read_text(encoding="utf-8")
+
+        self.assertEqual(len(re.findall(r'<div class="card(?: |")', html)), 26)
+        self.assertNotIn(removed, html)
+
     def test_dynamic_metadata_adds_searchable_product_with_five_language_links(self):
         titles = {
             "28_TEST": {

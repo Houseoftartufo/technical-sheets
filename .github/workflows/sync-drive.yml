@@ -48,6 +48,7 @@ jobs:
           GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
           GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
           DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID || secrets.DRIVE_SOURCE_FOLDER_ID }}
+          DRIVE_PROCESSED_FOLDER_ID: ${{ vars.DRIVE_PROCESSED_FOLDER_ID }}
           DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID || secrets.DRIVE_CATALOG_FOLDER_ID }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
@@ -60,12 +61,15 @@ jobs:
           plan=json.loads((run/"drive_sync_plan.json").read_text(encoding="utf-8"))
           manifest_id=(run/"manifest_file_id.txt").read_text(encoding="utf-8").strip()
           missing_titles=any(not all(entry.get("title",{}).get(lang) for lang in ("ITA","FR","ENG","NL","DE")) for entry in plan["next_manifest"]["products"].values())
-          dirty=bool(plan["imported"] or plan["removed_folders"] or not manifest_id or missing_titles or os.environ["GITHUB_EVENT_NAME"]=="push")
-          with open(os.environ["GITHUB_OUTPUT"],"a",encoding="utf-8") as output: output.write(f"has_changes={str(dirty).lower()}\n")
+          dirty=bool(plan["imported"] or plan["removed_folders"] or plan.get("rename_sources") or not manifest_id or missing_titles or os.environ["GITHUB_EVENT_NAME"]=="push")
+          with open(os.environ["GITHUB_OUTPUT"],"a",encoding="utf-8") as output:
+              output.write(f"has_changes={str(dirty).lower()}\n")
+              output.write(f"products_to_generate={len(plan['imported'])}\n")
           report=json.loads((run/"drive_sync_report.json").read_text(encoding="utf-8")); report["catalog_changed"]=dirty
           (run/"drive_sync_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
           PY
       - name: Generate changed technical sheets with official engine
+        if: steps.prepare.outputs.products_to_generate != '0'
         run: |
           mkdir -p "$DRIVE_GENERATED_DIR"
           python _BUILD/engine.py "$DRIVE_RUN_DIR/product_overrides.json" "$DRIVE_GENERATED_DIR" 06/06/2026
@@ -85,6 +89,8 @@ jobs:
               if path.stat().st_size < 500:
                   raise SystemExit(f"PDF is unexpectedly small: {path}")
           PY
+      - name: Run repository tests and whitespace validation
+        run: |
           python -m unittest discover -s tests -v
           node --test tests/search.test.js
           git diff --check
@@ -165,6 +171,7 @@ jobs:
           GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
           DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID || secrets.DRIVE_CATALOG_FOLDER_ID }}
           DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID || secrets.DRIVE_SOURCE_FOLDER_ID }}
+          DRIVE_PROCESSED_FOLDER_ID: ${{ vars.DRIVE_PROCESSED_FOLDER_ID }}
           DRIVE_RUN_DIR: /tmp/technical-sheets-run
           DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
         run: python _BUILD/finalize_drive_sync.py

@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "_BUILD"))
 
-from drive_sync_state import (canonicalize_product, source_fingerprint, unchanged_source_ids,
+from drive_sync_state import (canonicalize_product, canonical_managed_name, source_fingerprint, unchanged_source_ids,
                                product_manifest_entry, removed_product_folders, load_manifest, resolve_output_folder)
 
 
@@ -101,6 +101,21 @@ class DriveSyncStateTest(unittest.TestCase):
         self.assertIn("collision", error.lower())
         self.assertEqual(product, {"folder": "28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO"})
 
+    def test_content_hash_ignores_drive_name_and_modified_time(self):
+        original = {"id": "one", "name": "supplier.pdf", "md5Checksum": "abc",
+                    "mimeType": "application/pdf", "size": "123", "modifiedTime": "2026-01-01T00:00:00Z"}
+        renamed = {**original, "name": "01_PRODUCT__supplier.pdf", "modifiedTime": "2026-10-09T00:00:00Z"}
+        changed_content = {**renamed, "md5Checksum": "def"}
+        self.assertEqual(source_fingerprint(original), source_fingerprint(renamed))
+        self.assertNotEqual(source_fingerprint(renamed), source_fingerprint(changed_content))
+
+    def test_manifest_keeps_original_and_canonical_names_separately(self):
+        source = {"id": "one", "name": "Supplier Sheet.pdf", "md5Checksum": "abc", "mimeType": "application/pdf"}
+        entry = product_manifest_entry(source, "01_ACETO_BALSAMICO_SPRAY", {"ITA": "Aceto"})
+        self.assertEqual(entry["original_name"], "Supplier Sheet.pdf")
+        self.assertEqual(entry["managed_name"], "01_ACETO_BALSAMICO_SPRAY__Supplier Sheet.pdf")
+        self.assertEqual(canonical_managed_name("01_ACETO_BALSAMICO_SPRAY", entry["original_name"]), entry["managed_name"])
+
     def test_content_hash_tracks_source_and_ignores_drive_file_id(self):
         a = {"id": "one", "name": "sheet.pdf", "md5Checksum": "abc", "mimeType": "application/pdf"}
         b = {"id": "two", "name": "sheet.pdf", "md5Checksum": "abc", "mimeType": "application/pdf"}
@@ -156,6 +171,16 @@ class DriveSyncStateTest(unittest.TestCase):
         self.assertEqual(result["removed_source_ids"], [])
         self.assertEqual(result["removed_folders"], [])
         self.assertEqual(result["next_products"]["a"], entry)
+
+    def test_old_manifest_fingerprint_is_migrated_without_reextracting_after_file_rename(self):
+        from drive_sync_state import legacy_source_fingerprint, reconcile_sources
+        item = {"id": "a", "name": "supplier.pdf", "md5Checksum": "x", "mimeType": "application/pdf", "size": "4", "modifiedTime": "2025-01-01T00:00:00Z"}
+        old = {"folder": "28_PRODUCT", "fingerprint": legacy_source_fingerprint(item), "name": "supplier.pdf", "title": {"ITA": "Product"}}
+        result = reconcile_sources([], [item], {"version": 1, "products": {"a": old}})
+        self.assertEqual(result["unchanged"], ["a"])
+        self.assertEqual(result["changed_active"], [])
+        self.assertEqual(result["next_products"]["a"]["original_name"], "supplier.pdf")
+        self.assertEqual(result["next_products"]["a"]["managed_name"], "28_PRODUCT__supplier.pdf")
 
     def test_missing_processed_source_removes_only_its_owned_product(self):
         from drive_sync_state import reconcile_sources
