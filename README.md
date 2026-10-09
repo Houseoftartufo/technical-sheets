@@ -33,7 +33,7 @@ Condividi le cartelle Drive pertinenti con l'indirizzo service account. Il catal
 
 ## Evitare deploy Git Vercel concorrenti
 
-Il workflow pubblica il bundle completo attraverso Vercel CLI per mantenere online insieme le 27 schede storiche e i prodotti gestiti da Drive. In Vercel apri **Project → Settings → Build and Deployment → Ignored Build Step** e imposta `exit 0` per saltare i deploy avviati dai push Git. Il deploy ufficiale viene avviato dal workflow con Vercel CLI, non dai commit Git. Verifica una preview e un deploy CLI prima di affidarti alla sincronizzazione automatica; non disconnettere il repository.
+Il workflow pubblica il bundle completo attraverso Vercel CLI per mantenere online insieme le 27 schede storiche e i prodotti gestiti da Drive. Si collega in modo non interattivo all'ID progetto e team configurati nelle variabili GitHub. In Vercel apri **Project → Settings → Build and Deployment → Ignored Build Step** e imposta `exit 0` per saltare i deploy avviati dai push Git. Il deploy ufficiale viene avviato dal workflow con Vercel CLI, non dai commit Git. Verifica una preview e un deploy CLI prima di affidarti alla sincronizzazione automatica; non disconnettere il repository.
 
 ## Integrità dei contenuti
 
