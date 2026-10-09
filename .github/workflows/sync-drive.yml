@@ -72,6 +72,8 @@ jobs:
           python - <<'PY'
           import json, os
           from pathlib import Path
+          import sys
+          sys.path.insert(0, str(Path("_BUILD").resolve()))
           from i18n import LANGS
           root = Path(os.environ["DRIVE_GENERATED_DIR"])
           products = json.loads(Path(os.environ["DRIVE_RUN_DIR"], "drive_sync_plan.json").read_text(encoding="utf-8"))["imported"]

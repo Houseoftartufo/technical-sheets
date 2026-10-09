@@ -44,6 +44,7 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertLess(smoke, production)
         self.assertLess(production, drive)
         self.assertIn("active_products", self.workflow)
+        self.assertIn('sys.path.insert(0, str(Path("_BUILD").resolve()))', self.workflow)
         self.assertIn("steps.prepare.outputs.has_changes == 'true'", self.workflow)
         self.assertIn("Record workflow outcome", self.workflow)
         self.assertIn("workflow_status", self.workflow)
