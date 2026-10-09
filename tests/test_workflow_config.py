@@ -55,7 +55,7 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("drive_sync_report.json", self.workflow)
         self.assertIn("preview_deployment_url", self.workflow)
         self.assertIn("production_deployment_url", self.workflow)
-        self.assertIn("runner.temp", self.workflow)
+        self.assertIn("/tmp/technical-sheets-run", self.workflow)
 
     def test_manual_dispatch_defaults_to_preview_and_only_main_can_publish(self):
         production = self.workflow.split("- name: Deploy Vercel production", 1)[1].split("- name: Finalize Drive state", 1)[0]
