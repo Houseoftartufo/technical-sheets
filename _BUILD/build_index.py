@@ -44,11 +44,22 @@ def build_index(argv=None):
     parser=argparse.ArgumentParser()
     parser.add_argument("--output",type=Path)
     parser.add_argument("--dynamic-products",type=Path)
+    parser.add_argument("--static-products",type=Path,help="JSON list of static folders to include; omit to include the full legacy catalog")
     parser.add_argument("--site-root",type=Path,default=ROOT)
     args=parser.parse_args(argv)
     site_root=args.site_root.resolve()
     output=(args.output or site_root/"index.html").resolve()
-    static_titles=load_static_titles()
+    all_static_titles=load_static_titles()
+    if args.static_products:
+        selected=json.loads(args.static_products.read_text(encoding="utf-8"))
+        if not isinstance(selected,list) or any(not isinstance(folder,str) for folder in selected):
+            raise ValueError("static products metadata must be a JSON list of folder names")
+        unknown=sorted(set(selected)-set(all_static_titles))
+        if unknown:
+            raise ValueError("static products metadata contains unknown folder(s): "+", ".join(unknown))
+        static_titles={folder:all_static_titles[folder] for folder in selected}
+    else:
+        static_titles=all_static_titles
     dynamic_titles=load_dynamic_titles(args.dynamic_products)
     collisions=sorted(set(static_titles) & set(dynamic_titles))
     if collisions:

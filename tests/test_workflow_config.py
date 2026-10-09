@@ -26,11 +26,12 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertNotIn("contents: write", self.workflow)
 
     def test_uses_vercel_secret_and_org_project_variables(self):
-        for name in ("VERCEL_TOKEN", "vars.VERCEL_ORG_ID", "vars.VERCEL_PROJECT_ID", "secrets.DRIVE_SOURCE_FOLDER_ID", "secrets.DRIVE_CATALOG_FOLDER_ID"):
+        for name in ("VERCEL_TOKEN", "vars.VERCEL_ORG_ID", "vars.VERCEL_PROJECT_ID", "secrets.DRIVE_SOURCE_FOLDER_ID", "secrets.DRIVE_CATALOG_FOLDER_ID", "vars.DRIVE_PROCESSED_FOLDER_ID"):
             self.assertIn(name, self.workflow)
         self.assertIn("VERCEL_TOKEN", self.readme)
         self.assertIn("VERCEL_ORG_ID", self.readme)
         self.assertIn("VERCEL_PROJECT_ID", self.readme)
+        self.assertIn("DRIVE_PROCESSED_FOLDER_ID", self.readme)
         self.assertIn("VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}", self.workflow)
         self.assertIn("VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}", self.workflow)
         self.assertIn('vercel link --project "$VERCEL_PROJECT_ID" --scope "$VERCEL_ORG_ID" --yes --token "$VERCEL_TOKEN"', self.workflow)
@@ -44,6 +45,8 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertLess(smoke, production)
         self.assertLess(production, drive)
         self.assertIn("active_products", self.workflow)
+        self.assertIn("products_to_generate", self.workflow)
+        self.assertIn("DRIVE_PROCESSED_FOLDER_ID: ${{ vars.DRIVE_PROCESSED_FOLDER_ID }}", self.workflow)
         self.assertIn('sys.path.insert(0, str(Path("_BUILD").resolve()))', self.workflow)
         self.assertIn("steps.prepare.outputs.has_changes == 'true'", self.workflow)
         self.assertIn("Record workflow outcome", self.workflow)

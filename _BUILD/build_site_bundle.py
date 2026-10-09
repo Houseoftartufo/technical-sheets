@@ -120,7 +120,7 @@ def migrate_legacy_product_titles(drive, catalog_id, manifest, active_products):
     return active_products
 
 
-def assemble_site_bundle(repo_root, generated_root, active_products, drive, catalog_id, output_root):
+def assemble_site_bundle(repo_root, generated_root, active_products, drive, catalog_id, output_root, managed_folders=None):
     """Copy public assets, unchanged active Drive outputs and generated updates into an empty bundle."""
     repo_root = Path(repo_root).resolve()
     generated_root = Path(generated_root).resolve()
@@ -132,7 +132,10 @@ def assemble_site_bundle(repo_root, generated_root, active_products, drive, cata
     output_root.mkdir(parents=True, exist_ok=True)
 
     static_titles = load_static_titles()
-    for folder in sorted(static_titles):
+    managed_folders = None if managed_folders is None else set(managed_folders)
+    static_to_copy = set(static_titles) if managed_folders is None else set(static_titles) & managed_folders
+    generated_folders = {folder for folder in active_products if (generated_root / folder).is_dir()}
+    for folder in sorted(static_to_copy - generated_folders):
         source = repo_root / folder
         if not source.is_dir():
             raise RuntimeError(f"Static product folder is missing: {folder}")
@@ -151,19 +154,32 @@ def assemble_site_bundle(repo_root, generated_root, active_products, drive, cata
         generated = generated_root / folder
         destination = output_root / folder
         if generated.is_dir():
+            if destination.exists():
+                shutil.rmtree(destination)
             shutil.copytree(generated, destination)
             _validate_product_files(folder, destination)
+        elif folder in static_titles:
+            if not destination.is_dir():
+                raise RuntimeError(f"Active static product is missing from repository bundle: {folder}")
         else:
             _copy_drive_product(drive, catalog_id, folder, destination)
             _validate_product_files(folder, destination)
 
+    dynamic_titles = {
+        folder: titles for folder, titles in active_products.items()
+        if folder not in static_titles or folder in generated_folders
+    }
+    static_included = sorted(static_to_copy - generated_folders)
     with tempfile.TemporaryDirectory(prefix="drive-site-index-") as temp:
         metadata = Path(temp) / "active-products.json"
-        metadata.write_text(json.dumps(active_products, ensure_ascii=False, indent=2), encoding="utf-8")
+        metadata.write_text(json.dumps(dynamic_titles, ensure_ascii=False, indent=2), encoding="utf-8")
+        static_metadata = Path(temp) / "static-products.json"
+        static_metadata.write_text(json.dumps(static_included, ensure_ascii=False, indent=2), encoding="utf-8")
         build_index([
             "--site-root", str(output_root),
             "--output", str(output_root / "index.html"),
             "--dynamic-products", str(metadata),
+            "--static-products", str(static_metadata),
         ])
     return output_root
 
@@ -192,7 +208,9 @@ def main():
     plan["next_manifest"]=manifest
     plan["active_products"]=active
     (run_dir / "drive_sync_plan.json").write_text(json.dumps(plan,ensure_ascii=False,indent=2),encoding="utf-8")
-    assemble_site_bundle(repo_root, Path(os.environ["DRIVE_GENERATED_DIR"]), active, drive, catalog_id, output_root)
+    managed_folders = {entry.get("folder") for entry in manifest.get("products", {}).values() if entry.get("folder")}
+    assemble_site_bundle(repo_root, Path(os.environ["DRIVE_GENERATED_DIR"]), active, drive, catalog_id,
+                         output_root, managed_folders=managed_folders)
     print(f"Validated Vercel bundle with {len(active)} managed products")
 
 

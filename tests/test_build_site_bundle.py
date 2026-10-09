@@ -104,6 +104,44 @@ class BuildSiteBundleTests(unittest.TestCase):
             self.assertEqual((result / "28_ACTIVE" / "28_ACTIVE_DE.pdf").read_bytes(), payloads["drive-28_ACTIVE-28_ACTIVE_DE.pdf"])
             self.assertIn("Active DE", index)
 
+    def test_authoritative_manifest_hides_removed_static_product_from_bundle_and_index(self):
+        repo = Path(__file__).resolve().parents[1]
+        titles = load_static_titles()
+        removed = sorted(titles)[0]
+        active = {folder: values for folder, values in titles.items() if folder != removed}
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "site"
+            result = assemble_site_bundle(repo, Path(temp) / "generated", active,
+                                         FakeDrive(), "catalog", output, managed_folders=set(active))
+            index = (result / "index.html").read_text(encoding="utf-8")
+        self.assertFalse((result / removed).exists())
+        self.assertEqual(len(re.findall(r'<div class="card(?: |")', index)), 26)
+        self.assertNotIn(removed, index)
+
+    def test_regenerated_static_product_overlays_once_and_other_static_outputs_stay_identical(self):
+        repo = Path(__file__).resolve().parents[1]
+        titles = load_static_titles()
+        changed = sorted(titles)[0]
+        dynamic_titles = {lang: f"Updated {lang}" for lang in LANGS}
+        active = {folder: values for folder, values in titles.items()}
+        active[changed] = dynamic_titles
+        with tempfile.TemporaryDirectory() as temp:
+            generated = Path(temp) / "generated"
+            product = generated / changed
+            product.mkdir(parents=True)
+            for filename in expected_names(changed):
+                (product / filename).write_bytes(b"regenerated")
+            output = Path(temp) / "site"
+            result = assemble_site_bundle(repo, generated, active, FakeDrive(), "catalog", output,
+                                         managed_folders=set(active))
+            index = (result / "index.html").read_text(encoding="utf-8")
+            static_files = [path for path in (repo / sorted(titles)[1]).iterdir() if path.is_file()]
+            self.assertEqual((result / changed / f"{changed}_DE.pdf").read_bytes(), b"regenerated")
+            self.assertIn("Updated DE", index)
+            self.assertEqual(len(re.findall(r'<div class="card(?: |")', index)), 27)
+            for source in static_files:
+                self.assertEqual((result / sorted(titles)[1] / source.name).read_bytes(), source.read_bytes())
+
     def test_changed_product_overlays_drive_copy_and_unlisted_generated_files_are_excluded(self):
         repo = Path(__file__).resolve().parents[1]
         drive = FakeDrive()

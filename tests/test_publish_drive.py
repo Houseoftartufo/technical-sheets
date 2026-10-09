@@ -79,6 +79,10 @@ class FakeDrive:
         item=next(x for x in self.items if x["id"]==fileId)
         return Request(lambda: dict(item))
 
+def source_name(drive, source_id):
+    return next(item["name"] for item in drive.items if item["id"] == source_id)
+
+
 class PublishDriveTests(unittest.TestCase):
     def test_upserts_changed_product_trashes_only_owned_removal_moves_same_source_and_writes_manifest_last(self):
         drive = FakeDrive()
@@ -125,6 +129,39 @@ class PublishDriveTests(unittest.TestCase):
         self.assertEqual(second["manifest_file_id"],first["manifest_file_id"])
         manifest_writes=[event for event in drive.events if event[1]==".technical-sheets-manifest.json"]
         self.assertEqual(len(manifest_writes),1)
+
+    def test_source_files_are_renamed_only_during_finalize_and_before_manifest_write(self):
+        drive = FakeDrive()
+        source = {"id": "source", "name": "Supplier sheet.pdf", "mimeType": "application/pdf", "parents": ["processed"]}
+        drive.items.append(source)
+        entry = {"folder": "01_PRODUCT", "fingerprint": "x", "name": "Supplier sheet.pdf",
+                 "original_name": "Supplier sheet.pdf", "managed_name": "01_PRODUCT__Supplier sheet.pdf", "title": {}}
+        plan = {"status": "ready", "imported": {}, "removed_folders": [], "move_source_ids": [],
+                "rename_sources": [{"id": "source", "from_name": "Supplier sheet.pdf", "to_name": entry["managed_name"]}],
+                "next_manifest": {"version": 2, "products": {"source": entry}, "legacy_folders": []}}
+        first = apply(drive, plan, Path("."), "catalog", "processed", None)
+        first_events = list(drive.events)
+        second = apply(drive, plan, Path("."), "catalog", "processed", first["manifest_file_id"])
+        self.assertEqual(source["name"], entry["managed_name"])
+        self.assertEqual(first["renamed_sources"], [{"id": "source", "name": entry["managed_name"]}])
+        self.assertEqual(second["renamed_sources"], [])
+        self.assertEqual(first_events[-2], ("update", entry["managed_name"]))
+        self.assertEqual(first_events[-1], ("create", ".technical-sheets-manifest.json"))
+        self.assertEqual(len(drive.events), len(first_events))
+
+    def test_source_name_collision_blocks_all_finalize_mutations(self):
+        drive = FakeDrive()
+        drive.items.extend([
+            {"id": "source", "name": "Original.pdf", "mimeType": "application/pdf", "parents": ["processed"]},
+            {"id": "collision", "name": "01_PRODUCT__Original.pdf", "mimeType": "application/pdf", "parents": ["processed"]},
+        ])
+        plan = {"status": "ready", "imported": {}, "removed_folders": [], "move_source_ids": [],
+                "rename_sources": [{"id": "source", "from_name": "Original.pdf", "to_name": "01_PRODUCT__Original.pdf"}],
+                "next_manifest": {"version": 2, "products": {"source": {"folder": "01_PRODUCT"}}, "legacy_folders": []}}
+        with self.assertRaisesRegex(RuntimeError, "source filename collision"):
+            apply(drive, plan, Path("."), "catalog", "processed", None)
+        self.assertEqual(source_name(drive, "source"), "Original.pdf")
+        self.assertEqual(drive.events, [])
 
     def test_manifest_is_not_written_if_any_upsert_fails(self):
         class FailingDrive(FakeDrive):
