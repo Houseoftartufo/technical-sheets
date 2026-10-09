@@ -2,6 +2,12 @@ name: Sync supplier technical sheets
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_to_production:
+        description: Publish to the official site after the preview smoke test (available only from main)
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [main]
   schedule:
@@ -125,7 +131,7 @@ jobs:
                   check(f"{folder}/{folder}_{lang}.pdf")
           PY
       - name: Deploy Vercel production
-        if: steps.prepare.outputs.has_changes == 'true'
+        if: steps.prepare.outputs.has_changes == 'true' && github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || github.event.inputs.publish_to_production == 'true')
         id: production
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -144,7 +150,7 @@ jobs:
           PY
       - name: Finalize Drive state
         id: finalize
-        if: success()
+        if: success() && steps.production.outcome == 'success'
         env:
           GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
           GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
