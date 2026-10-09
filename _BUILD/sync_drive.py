@@ -11,7 +11,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from drive_schema import LANGS, validate_product
+from drive_schema import LANGS, normalize_optional_fields, validate_product
 from drive_sync_state import (
     canonicalize_product, load_manifest, product_manifest_entry,
     reconcile_sources, removed_product_folders, resolve_output_folder, source_fingerprint,
@@ -155,12 +155,15 @@ def extract(client, item, content):
                 "method": localized_schema(),
             }),
             "nutrition": object_schema({
-                name: {"type": "string"}
-                for name in ("energy", "fat", "sat", "carb", "sugar", "protein", "salt", "fibre")
+                **{
+                    name: {"type": "string"}
+                    for name in ("energy", "fat", "sat", "carb", "sugar", "protein", "salt")
+                },
+                "fibre": {"type": ["string", "null"]},
             }),
             "characteristics": object_schema({
-                "chemical": localized_schema(),
-                "micro": localized_schema(),
+                "chemical": {"anyOf": [localized_schema(), {"type": "null"}]},
+                "micro": {"anyOf": [localized_schema(), {"type": "null"}]},
             }),
         },
         "required": ["folder", "title", "general", "ingredients", "storage", "nutrition", "characteristics"],
@@ -169,8 +172,10 @@ def extract(client, item, content):
         "Extract this supplier technical sheet into the supplied JSON schema. "
         "Translate every localized field into ITA, FR, ENG, NL, DE. Preserve exact numbers, units, percentages, "
         "ingredient order, botanical names, allergens and legal text. Do not guess technical values: if a required "
-        "field is absent or ambiguous, return an empty value so validation blocks publication. EAN may be empty. "
-        "Use the product folder identifier in uppercase with underscores."
+        "required field is absent or ambiguous, return an empty value so validation blocks publication. EAN may be empty. "
+        "Dietary fibre, chemical characteristics, and microbiological characteristics are optional: if the source does not "
+        "state them, return null and do not infer or copy them from a different product. Present optional characteristics "
+        "must be translated completely into every language. Use the product folder identifier in uppercase with underscores."
     )
     try:
         response = client.responses.create(
@@ -226,7 +231,9 @@ def prepare(drive, source_id, processed_id, manifest, client, build_dir=BUILD, r
     changed_active = state["changed_active"]
     for item in sorted(changed_pending + changed_active, key=lambda value: value["id"]):
         try:
-            product = canonicalize_product(extract(client, item, download(drive, item)), item["name"])
+            product = normalize_optional_fields(
+                canonicalize_product(extract(client, item, download(drive, item)), item["name"])
+            )
             validation = validate_product(product)
             if validation:
                 errors.append({"file": item["name"], "errors": validation})
