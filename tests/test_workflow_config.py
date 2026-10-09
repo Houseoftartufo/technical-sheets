@@ -14,6 +14,8 @@ class WorkflowConfigTests(unittest.TestCase):
 
     def test_runs_on_schedule_manual_and_main_push(self):
         self.assertIn("workflow_dispatch:", self.workflow)
+        self.assertIn("publish_to_production:", self.workflow)
+        self.assertIn("default: false", self.workflow)
         self.assertIn("push:", self.workflow)
         self.assertIn("branches: [main]", self.workflow)
         self.assertIn('cron: "*/15 * * * *"', self.workflow)
@@ -54,6 +56,14 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("preview_deployment_url", self.workflow)
         self.assertIn("production_deployment_url", self.workflow)
         self.assertIn("runner.temp", self.workflow)
+
+    def test_manual_dispatch_defaults_to_preview_and_only_main_can_publish(self):
+        production = self.workflow.split("- name: Deploy Vercel production", 1)[1].split("- name: Finalize Drive state", 1)[0]
+        self.assertIn("github.ref == 'refs/heads/main'", production)
+        self.assertIn("github.event_name != 'workflow_dispatch'", production)
+        self.assertIn("github.event.inputs.publish_to_production == 'true'", production)
+        finalize = self.workflow.split("- name: Finalize Drive state", 1)[1].split("- name: Record workflow outcome", 1)[0]
+        self.assertIn("steps.production.outcome == 'success'", finalize)
 
     def test_readme_documents_git_deploy_prevention_and_setup(self):
         self.assertIn("Ignored Build Step", self.readme)

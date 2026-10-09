@@ -5,10 +5,10 @@ Catalogo multilingue House of Tartufo, con schede generate dal motore ufficiale 
 ## Caricamento nuove schede fornitori
 
 1. Carica il PDF, DOC o DOCX originale nella cartella Drive **DA ELABORARE**.
-2. Il workflow GitHub Actions la controlla ogni 15 minuti; puoi anche avviarlo da **Actions → Sync supplier technical sheets → Run workflow**.
+2. Il workflow GitHub Actions la controlla ogni 15 minuti. **Run workflow** avvia un collaudo preview-only per impostazione predefinita; da `main` puoi scegliere esplicitamente `publish_to_production` dopo aver controllato la preview.
 3. Il job estrae e valida i dati, crea le cinque lingue e genera HTML/PDF usando lo stesso motore e lo stesso layout del catalogo.
 4. Pubblica prima una preview Vercel e verifica l'indice e ogni PDF attivo; poi pubblica lo stesso bundle sul sito ufficiale.
-5. Solo dopo il deploy riuscito sposta il file originale, mantenendo il suo ID, da **DA ELABORARE** a **ELABORATE**. Le schede generate e i PDF restano nel Drive catalogo, nelle cartelle prodotto.
+5. Solo dopo il deploy ufficiale riuscito sposta il file originale, mantenendo il suo ID, da **DA ELABORARE** a **ELABORATE**. I collaudi preview-only non spostano né modificano file Drive. Le schede generate e i PDF restano nel Drive catalogo, nelle cartelle prodotto.
 6. I documenti incompleti, ambigui, duplicati o in formato non supportato bloccano il job e restano intatti nella cartella d'ingresso. Il report è disponibile come artifact del run.
 
 Per aggiornare un prodotto sostituisci il documento sorgente già in **ELABORATE** mantenendolo nella cartella. Per rimuovere un prodotto gestito, elimina la sua scheda da **ELABORATE**: solo la cartella prodotto registrata nel manifest viene spostata nel cestino Drive. Le cartelle storiche e non gestite sono escluse dalle rimozioni.
