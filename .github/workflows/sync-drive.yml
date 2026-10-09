@@ -25,9 +25,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      DRIVE_RUN_DIR: ${{ runner.temp }}/technical-sheets-run
-      DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
-      SITE_BUNDLE_DIR: ${{ runner.temp }}/technical-sheets-site
+      DRIVE_RUN_DIR: /tmp/technical-sheets-run
+      DRIVE_GENERATED_DIR: /tmp/technical-sheets-generated
+      SITE_BUNDLE_DIR: /tmp/technical-sheets-site
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -114,7 +114,7 @@ jobs:
         if: steps.prepare.outputs.has_changes == 'true'
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.url }}
-          DRIVE_RUN_DIR: ${{ runner.temp }}/technical-sheets-run
+          DRIVE_RUN_DIR: /tmp/technical-sheets-run
         run: |
           python - <<'PY'
           import json, os, urllib.request
@@ -137,7 +137,7 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
-          DRIVE_RUN_DIR: ${{ runner.temp }}/technical-sheets-run
+          DRIVE_RUN_DIR: /tmp/technical-sheets-run
         run: |
           url=$(vercel deploy "$SITE_BUNDLE_DIR" --prod --yes --token "$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
@@ -156,7 +156,7 @@ jobs:
           GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
           DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID || secrets.DRIVE_CATALOG_FOLDER_ID }}
           DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID || secrets.DRIVE_SOURCE_FOLDER_ID }}
-          DRIVE_RUN_DIR: ${{ runner.temp }}/technical-sheets-run
+          DRIVE_RUN_DIR: /tmp/technical-sheets-run
           DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
         run: python _BUILD/finalize_drive_sync.py
       - name: Record workflow outcome
@@ -187,5 +187,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: drive-sync-report-${{ github.run_id }}
-          path: ${{ runner.temp }}/technical-sheets-run/drive_sync_report.json
+          path: /tmp/technical-sheets-run/drive_sync_report.json
           if-no-files-found: warn
