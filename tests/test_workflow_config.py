@@ -40,6 +40,7 @@ class WorkflowConfigTests(unittest.TestCase):
 
     def test_cloudflare_deploy_workflow_is_main_only_or_manual_and_scoped(self):
         deploy = (ROOT / ".github" / "workflows" / "deploy-drive-webhook.yml").read_text(encoding="utf-8")
+        preflight = deploy.split("- name: Check deployment credentials", 1)[1].split("- name: Deploy Worker and install its secrets", 1)[0]
         self.assertIn("branches: [main]", deploy)
         self.assertIn("workflow_dispatch:", deploy)
         self.assertIn("cloudflare/wrangler-action@v4", deploy)
@@ -49,6 +50,7 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertNotIn("secrets.GITHUB_DISPATCH_TOKEN", deploy)
         self.assertIn("DRIVE_WEBHOOK_TOKEN", deploy)
         self.assertIn("DRIVE_STATE_API_TOKEN", deploy)
+        self.assertIn("DRIVE_STATE_API_TOKEN: ${{ secrets.DRIVE_STATE_API_TOKEN }}", preflight)
         self.assertIn("secrets.DRIVE_STATE_API_TOKEN", self.workflow)
         self.assertIn("DRIVE_WEBHOOK_URL", self.readme)
         self.assertIn("/health", deploy)
