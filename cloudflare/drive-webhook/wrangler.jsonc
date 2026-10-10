@@ -4,6 +4,10 @@
   "main": "src/index.mjs",
   "compatibility_date": "2026-10-10",
   "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 }
+  },
   "durable_objects": {
     "bindings": [
       { "name": "DISPATCHER", "class_name": "DriveDispatchDebouncer" }
@@ -12,4 +16,4 @@
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["DriveDispatchDebouncer"] }
   ]
-}\n
+}
