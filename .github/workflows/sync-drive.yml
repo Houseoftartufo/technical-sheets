@@ -148,9 +148,13 @@ jobs:
             git switch -c "$BRANCH"
           else
             BRANCH="${GITHUB_REF_NAME}"
+            git fetch origin "$BRANCH"
+            if [[ "${{ steps.staged.outputs.has_commit }}" == "true" ]]; then
+              git rebase "origin/$BRANCH"
+            fi
           fi
           if [[ "${{ steps.staged.outputs.has_commit }}" == "true" ]]; then
-            git push --force-with-lease origin "HEAD:refs/heads/$BRANCH"
+            git push origin "HEAD:refs/heads/$BRANCH"
           elif [[ "$GITHUB_REF" == refs/heads/main ]]; then
             echo "No site changes to publish from main."
             exit 0
