@@ -146,7 +146,7 @@ class SyncDriveTests(unittest.TestCase):
         self.assertEqual(drive.mutations, 0)
         self.assertEqual(pending["parents"], ["intake"])
 
-    def test_bootstrap_registers_27_static_sources_generates_only_oil_carpaccio_and_leaves_duplicate_in_intake(self):
+    def test_bootstrap_archives_duplicate_intake_source_without_regenerating_product(self):
         mapping = sync_drive.load_baseline_mapping(sync_drive.BUILD / "drive_baseline_mapping.json")["sources"]
         active = [{"id": f"active-{i}", "name": name, "mimeType": "application/pdf",
                    "md5Checksum": f"hash-{i}", "size": str(i), "parents": ["processed"]}
@@ -164,12 +164,31 @@ class SyncDriveTests(unittest.TestCase):
         self.assertTrue(plan["bootstrap"])
         self.assertEqual(set(plan["imported"]), {"28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO"})
         self.assertEqual(len(plan["unchanged"]), 27)
-        self.assertEqual(len(plan["rename_sources"]), 28)
+        self.assertEqual(len(plan["rename_sources"]), 29)
         self.assertEqual([item["id"] for item in plan["duplicate_sources"]], ["intake-copy"])
-        self.assertEqual(plan["move_source_ids"], [])
-        self.assertEqual(duplicate["parents"], ["intake"])
+        self.assertEqual(plan["move_source_ids"], ["intake-copy"])
+        rename = next(item for item in plan["rename_sources"] if item["id"] == "intake-copy")
+        self.assertTrue(rename["to_name"].startswith("ERRORE: DUPLICATO - "))
         extract.assert_called_once()
         self.assertEqual(drive.mutations, 0)
+
+    def test_archived_duplicate_is_ignored_on_later_sync(self):
+        canonical = {"id": "canonical", "name": "28_PRODUCT__supplier.pdf", "mimeType": "application/pdf",
+                     "md5Checksum": "same", "size": "123", "parents": ["processed"]}
+        duplicate = {"id": "copy", "name": "ERRORE: DUPLICATO - supplier [copy].pdf", "mimeType": "application/pdf",
+                     "md5Checksum": "same", "size": "123", "parents": ["processed"]}
+        manifest = {"version": 2, "products": {"canonical": {
+            "fingerprint": sync_drive.source_fingerprint(canonical), "folder": "28_PRODUCT",
+            "title": {"ITA": "Prodotto"},
+        }}}
+        with tempfile.TemporaryDirectory() as temp, patch.object(sync_drive, "extract") as extract:
+            plan = sync_drive.prepare(FakeDrive([canonical, duplicate]), "intake", "processed", manifest,
+                                     object(), run_dir=Path(temp))
+        self.assertEqual(plan["status"], "ready")
+        self.assertEqual(plan["unchanged"], ["canonical"])
+        self.assertEqual(plan["imported"], {})
+        self.assertEqual(plan["removed_folders"], [])
+        extract.assert_not_called()
 
     def test_incomplete_required_translation_blocks_but_blank_ean_is_allowed(self):
         product = valid_product()

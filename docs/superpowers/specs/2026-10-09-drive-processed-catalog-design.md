@@ -30,7 +30,7 @@ L'ID Drive dell'originale, non il suo nome, collega il file al manifest e al pro
 6. Dopo l'aggiornamento di Vercel e della cartella prodotto su Drive, l'originale viene spostato da DA_ELABORARE a ELABORATE mantenendo lo stesso ID.
 7. Un report Actions registra aggiunte, modifiche, rimozioni, controlli, pubblicazioni, errori e stato dello spostamento.
 
-Una sostituzione aggiorna la scheda associata senza duplicati. Un errore di estrazione, validazione, generazione o preview lascia l'originale in DA_ELABORARE e non pubblica risultati parziali.
+Una sostituzione aggiorna la scheda associata senza duplicati. Un errore di estrazione, validazione, generazione o preview lascia l'originale in DA_ELABORARE e non pubblica risultati parziali. Una copia byte-per-byte già presente in ELABORATE viene invece spostata lì e rinominata `ERRORE: DUPLICATO - …`: non genera una seconda scheda e viene ignorata nelle sincronizzazioni successive. Le collisioni con contenuto diverso restano in ingresso per revisione.
 
 ## Rimozione
 

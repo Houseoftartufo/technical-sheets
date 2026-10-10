@@ -55,7 +55,7 @@
 **File:** `_BUILD/sync_drive.py`, `_BUILD/publish_drive.py`, `_BUILD/finalize_drive_sync.py`, `tests/test_sync_drive.py`, `tests/test_publish_drive.py`.
 
 - [x] Testare che `DRIVE_PROCESSED_FOLDER_ID` venga validato e usato direttamente, senza creare cartelle sorelle; ID mancante/non-folder deve fallire in modo esplicito.
-- [x] Testare che una copia intake identica già presente in ELABORATE non venga importata due volte e resti nella cartella intake da risolvere; registrare il duplicato nel report.
+- [x] Archiviare una copia intake identica già presente in ELABORATE con prefisso `ERRORE: DUPLICATO -`, senza reimportare la scheda; ignorare il duplicato archiviato nelle sincronizzazioni successive e registrarlo nel report.
 - [x] Registrare nel piano le rinomine sorgente e i cambiamenti da finalizzare; nessuna rinomina nel `prepare`.
 - [x] Applicare la rinomina canonica e l’eventuale trasferimento solo in finalize dopo deploy produzione; operazione idempotente, controllo collisioni prima di mutare Drive e manifest scritto per ultimo.
 - [x] In caso di errore durante finalize, conservare il report diagnostico senza fingere che il manifest sia aggiornato.
