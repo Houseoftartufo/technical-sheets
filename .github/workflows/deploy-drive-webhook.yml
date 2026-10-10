@@ -69,7 +69,7 @@ jobs:
           url=os.environ.get("WORKER_URL", "").rstrip("/")
           if not url.startswith("https://"):
               raise SystemExit("Cloudflare did not return an HTTPS Worker URL")
-          request=urllib.request.Request(url+"/health", headers={"Cache-Control":"no-cache"})
+          request=urllib.request.Request(url+"/health", headers={"Cache-Control":"no-cache","User-Agent":"technical-sheets-health-check"})
           deadline=time.monotonic()+120
           while True:
               try:
