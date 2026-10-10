@@ -56,6 +56,8 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("default: false", deploy)
         self.assertIn("Verify Worker can dispatch the sync workflow", deploy)
         self.assertIn("Verify GitHub dispatch credential can start the sync workflow", deploy)
+        self.assertIn("GitHub dispatch credential verified with workflow run", deploy)
+        self.assertIn("baseline_run_id", deploy)
         self.assertIn("GH_DISPATCH_TOKEN: ${{ secrets.DRIVE_DISPATCH_TOKEN }}", deploy)
         self.assertIn('"ref": "main"', deploy)
         self.assertIn('"publish_to_production": "false"', deploy)
