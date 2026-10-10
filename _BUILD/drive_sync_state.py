@@ -14,7 +14,20 @@ OIL_CARPACCIO = {
         "DE": "Sommertrüffel-Carpaccio in Öl",
     },
 }
+DUPLICATE_ERROR_PREFIX = "ERRORE: DUPLICATO - "
 WATER_TERMS = re.compile(r"\b(acqua|water|eau|wasser|agua|in water)\b", re.IGNORECASE)
+
+
+def duplicate_error_name(item):
+    """Give an archived identical source a clear error label and collision-safe name."""
+    from pathlib import PurePosixPath
+
+    name = PurePosixPath(str(item.get("name", "supplier.pdf")).replace("\\", "/")).name
+    if name.startswith(DUPLICATE_ERROR_PREFIX):
+        return name
+    path = PurePosixPath(name)
+    source_id = str(item.get("id", "unknown"))[:8]
+    return f"{DUPLICATE_ERROR_PREFIX}{path.stem} [{source_id}]{path.suffix}"
 
 
 def canonicalize_product(product, source_name):

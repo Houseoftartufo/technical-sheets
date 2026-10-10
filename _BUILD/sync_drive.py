@@ -15,6 +15,7 @@ from drive_schema import LANGS, normalize_optional_fields, validate_product
 from drive_sync_state import (
     canonicalize_product, load_manifest, product_manifest_entry,
     reconcile_sources, removed_product_folders, resolve_output_folder, source_fingerprint,
+    DUPLICATE_ERROR_PREFIX, duplicate_error_name,
 )
 from drive_bootstrap import load_baseline_mapping, seed_baseline_manifest
 from i18n import DATA_FILES
@@ -246,12 +247,24 @@ def prepare(drive, source_id, processed_id, manifest, client, build_dir=BUILD, r
             write_plan_files(run_dir, plan)
             return plan
 
-    active_checksums = {item.get("md5Checksum") for item in active_items if item.get("md5Checksum")}
+    previous_products = manifest.get("products", {}) if isinstance(manifest, dict) else {}
+    tracked_active_checksums = {
+        item.get("md5Checksum") for item in active_items
+        if item.get("id") in previous_products and item.get("md5Checksum")
+    }
+    duplicate_active = [
+        item for item in active_items
+        if item.get("id") not in previous_products
+        and (item.get("name", "").startswith(DUPLICATE_ERROR_PREFIX)
+             or (item.get("md5Checksum") and item.get("md5Checksum") in tracked_active_checksums))
+    ]
+    duplicate_active_ids = {item["id"] for item in duplicate_active}
+    active = [item for item in active_items if item["id"] not in duplicate_active_ids]
+    active_checksums = {item.get("md5Checksum") for item in active if item.get("md5Checksum")}
     duplicate_pending = [item for item in intake_items
                          if item.get("md5Checksum") and item.get("md5Checksum") in active_checksums]
     duplicate_ids = {item["id"] for item in duplicate_pending}
     pending = [item for item in intake_items if item["id"] not in duplicate_ids]
-    active = active_items
     state = reconcile_sources(pending, active, manifest)
     existing = set()
     for filename in DATA_FILES:
@@ -328,19 +341,29 @@ def prepare(drive, source_id, processed_id, manifest, client, build_dir=BUILD, r
         managed_name = entry.get("managed_name") if entry else None
         if managed_name and item.get("name") != managed_name:
             rename_sources.append({"id": item["id"], "from_name": item.get("name", ""), "to_name": managed_name})
+    for item in duplicate_pending + duplicate_active:
+        target_name = duplicate_error_name(item)
+        if item.get("name") != target_name:
+            rename_sources.append({"id": item["id"], "from_name": item.get("name", ""), "to_name": target_name})
+    duplicate_sources = [
+        {"id": item["id"], "name": item.get("name", ""),
+         "reason": "same content checksum already exists in ELABORATE",
+         "archive_name": duplicate_error_name(item)}
+        for item in duplicate_pending + duplicate_active
+    ]
     plan = {
         "status": "blocked" if errors else "ready",
         "bootstrap": bool(bootstrap),
         "source_mapping": (bootstrap or {}).get("associations", []),
         "rename_sources": sorted(rename_sources, key=lambda item: item["id"]),
-        "duplicate_sources": [{"id": item["id"], "name": item["name"], "reason": "same content checksum already exists in ELABORATE"} for item in duplicate_pending],
+        "duplicate_sources": duplicate_sources,
         "changed_pending": changed_pending,
         "changed_active": changed_active,
         "imported": imported,
         "unchanged": state["unchanged"],
         "removed_source_ids": state["removed_source_ids"],
         "removed_folders": removed_folders,
-        "move_source_ids": sorted(item["id"] for item in pending) if not errors else [],
+        "move_source_ids": sorted(item["id"] for item in pending + duplicate_pending) if not errors else [],
         "source_folder_id": source_id, "processed_folder_id": processed_id,
         "next_manifest": next_manifest,
         "active_products": active_products,

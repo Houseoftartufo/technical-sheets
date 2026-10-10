@@ -149,6 +149,22 @@ class PublishDriveTests(unittest.TestCase):
         self.assertEqual(first_events[-1], ("create", ".technical-sheets-manifest.json"))
         self.assertEqual(len(drive.events), len(first_events))
 
+    def test_duplicate_source_is_moved_to_processed_and_renamed_as_error(self):
+        drive = FakeDrive()
+        source = {"id": "duplicate", "name": "Supplier sheet.pdf", "mimeType": "application/pdf",
+                  "parents": ["intake"]}
+        drive.items.append(source)
+        error_name = "ERRORE: DUPLICATO - Supplier sheet [duplicate].pdf"
+        plan = {"status": "ready", "imported": {}, "removed_folders": [],
+                "move_source_ids": ["duplicate"], "source_folder_id": "intake",
+                "rename_sources": [{"id": "duplicate", "from_name": source["name"], "to_name": error_name}],
+                "next_manifest": {"version": 2, "products": {}, "legacy_folders": []}}
+        result = apply(drive, plan, Path("."), "catalog", "processed", None)
+        self.assertEqual(source["parents"], ["processed"])
+        self.assertEqual(source["name"], error_name)
+        self.assertEqual(result["renamed_sources"], [{"id": "duplicate", "name": error_name}])
+        self.assertEqual(drive.events[:2], [("update", "Supplier sheet.pdf"), ("update", error_name)])
+
     def test_source_name_collision_blocks_all_finalize_mutations(self):
         drive = FakeDrive()
         drive.items.extend([
