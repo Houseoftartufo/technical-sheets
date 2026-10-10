@@ -38,7 +38,7 @@ class DriveWatchTests(unittest.TestCase):
         get_request = urlopen.call_args_list[0].args[0]
         put_request = urlopen.call_args_list[1].args[0]
         self.assertEqual(get_request.full_url, "https://worker.example/watch-state")
-        self.assertEqual(get_request.get_header("Authorization"), "Bearer secret-token")
+        self.assertEqual(get_request.get_header("X-goog-channel-token"), "secret-token")
         self.assertEqual(put_request.get_method(), "PUT")
         self.assertEqual(json.loads(put_request.data), {"id": "channel-2"})
 
