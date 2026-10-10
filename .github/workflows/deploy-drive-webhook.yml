@@ -184,6 +184,31 @@ jobs:
               if response.status != 202:
                   raise SystemExit(f"Worker returned unexpected smoke-test status {response.status}")
 
+          status_url = worker_url + "/dispatch-status"
+          status_request = urllib.request.Request(
+              status_url,
+              headers={
+                  "X-Goog-Channel-Token": os.environ["DRIVE_WEBHOOK_TOKEN"],
+                  "User-Agent": "technical-sheets-webhook-smoke-test",
+              },
+          )
+          deadline = time.monotonic() + 90
+          dispatch_status = None
+          while time.monotonic() < deadline:
+              with urllib.request.urlopen(status_request, timeout=20) as response:
+                  status = json.loads(response.read().decode("utf-8"))
+              if status and status.get("channel_id") == "smoke-test-" + os.environ["GITHUB_RUN_ID"] and status.get("status") != "pending":
+                  dispatch_status = status
+                  break
+              time.sleep(3)
+          if not dispatch_status:
+              raise SystemExit("Worker accepted the notification but did not report a dispatch result")
+          if dispatch_status.get("status") != "sent":
+              code = dispatch_status.get("http_status")
+              suffix = f" (HTTP {code})" if code else ""
+              raise SystemExit(f"Worker could not dispatch the sync workflow: {dispatch_status.get('status')}{suffix}")
+          print(f"Worker reports GitHub accepted dispatch (HTTP {dispatch_status.get('http_status')})")
+
           deadline = time.monotonic() + 150
           while time.monotonic() < deadline:
               matches = [run for run in get_runs()
