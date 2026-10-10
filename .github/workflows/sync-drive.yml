@@ -46,6 +46,7 @@ jobs:
           pip install -r requirements-drive.txt
       - name: Maintain Google Drive push channel
         id: watch
+        continue-on-error: true
         env:
           GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
           GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
