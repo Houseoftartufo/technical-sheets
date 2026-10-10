@@ -20,7 +20,7 @@ In **Settings → Secrets and variables → Actions** configura:
 - `OPENAI_API_KEY`: chiave API usata per estrazione e traduzione.
 - `GOOGLE_DRIVE_IMPERSONATED_USER`: opzionale, solo per delega Workspace in My Drive.
 - `CLOUDFLARE_API_TOKEN`: token Cloudflare con permesso **Workers Edit**, limitato all'account usato per il Worker.
-- `GITHUB_DISPATCH_TOKEN`: token fine-grained limitato a questa repository con il solo permesso **Actions: write**; consente al Worker di avviare il workflow.
+- `DRIVE_DISPATCH_TOKEN`: token fine-grained limitato a questa repository con il solo permesso **Actions: write**; il workflow lo installa nel Worker con il binding interno `GITHUB_DISPATCH_TOKEN`.
 - `DRIVE_WEBHOOK_TOKEN`: valore casuale di almeno 32 byte, condiviso solo tra il canale Drive e il Worker; viene caricato sul Worker dal workflow di deploy.
 
 **Variables**
@@ -46,7 +46,7 @@ Per attivarlo una volta sola:
 
 Google fa scadere i canali `changes` entro sette giorni: il workflow li rinnova un giorno prima della scadenza, senza richiedere interventi periodici. Il report di ogni sincronizzazione indica lo stato del canale. Se mancano i secret, il deploy automatico viene saltato in modo visibile e il polling continua.
 
-Il token fine-grained GitHub può avere una data di scadenza: prima che scada, rinnovalo e aggiorna il secret `GITHUB_DISPATCH_TOKEN`. Il workflow di deploy successivo aggiornerà il secret sul Worker.
+Il token fine-grained GitHub può avere una data di scadenza: prima che scada, rinnovalo e aggiorna il secret GitHub `DRIVE_DISPATCH_TOKEN`. Il workflow di deploy successivo aggiornerà il binding `GITHUB_DISPATCH_TOKEN` sul Worker.
 
 ## Pubblicazione e anteprima
 
