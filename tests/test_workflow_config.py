@@ -37,6 +37,8 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("_BUILD/engine.py", self.workflow)
         self.assertIn("_BUILD/build_site_bundle.py", self.workflow)
         self.assertIn("_BUILD/apply_site_bundle.py", self.workflow)
+        self.assertIn("DRIVE_GENERATED_DIR: /tmp/technical-sheets-generated", self.workflow)
+        self.assertNotIn("${{ runner.temp }}/technical-sheets-generated", self.workflow)
         self.assertIn('subprocess.run(["git","add","-A","--",*sorted(paths)]', self.workflow)
         self.assertNotIn("git add .", self.workflow)
         self.assertIn('paths.update(plan["active_products"])', self.workflow)

@@ -287,7 +287,7 @@ jobs:
           DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID || secrets.DRIVE_SOURCE_FOLDER_ID }}
           DRIVE_PROCESSED_FOLDER_ID: ${{ vars.DRIVE_PROCESSED_FOLDER_ID }}
           DRIVE_RUN_DIR: /tmp/technical-sheets-run
-          DRIVE_GENERATED_DIR: ${{ runner.temp }}/technical-sheets-generated
+          DRIVE_GENERATED_DIR: /tmp/technical-sheets-generated
         run: python _BUILD/finalize_drive_sync.py
       - name: Record workflow outcome
         if: always()
