@@ -21,21 +21,30 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn('cron: "*/5 * * * *"', self.workflow)
 
     def test_has_only_scoped_permissions_needed_for_preview_and_catalog_push(self):
-        self.assertIn("actions: write", self.workflow)
-        self.assertIn("contents: write", self.workflow)
-        self.assertIn("deployments: read", self.workflow)
-        self.assertIn("statuses: read", self.workflow)
+        sync = self.workflow.split("  sync:\n", 1)[1]
+        self.assertIn("actions: write", sync)
+        self.assertIn("contents: write", sync)
+        self.assertIn("deployments: read", sync)
+        self.assertIn("statuses: read", sync)
+        self.assertNotIn("id-token:", sync)
         self.assertNotIn("pull-requests:", self.workflow)
-        self.assertNotIn("contents: read\n", self.workflow)
+        watch = self.workflow.split("  watch:\n", 1)[1].split("  sync:\n", 1)[0]
+        self.assertIn("contents: read", watch)
+        self.assertIn("id-token: write", watch)
 
     def test_maintains_drive_push_channel_without_blocking_polling(self):
-        watch = self.workflow.split("- name: Maintain Google Drive push channel", 1)[1].split("- name: Prepare sync run", 1)[0]
+        watch = self.workflow.split("  watch:\n", 1)[1].split("  sync:\n", 1)[0]
         self.assertIn("continue-on-error: true", watch)
         self.assertIn("_BUILD/ensure_drive_watch.py", watch)
         self.assertIn("DRIVE_WEBHOOK_URL", watch)
         self.assertIn("DRIVE_WEBHOOK_TOKEN", watch)
+        self.assertNotIn("DRIVE_STATE_API_TOKEN", watch)
         self.assertNotIn("DRIVE_WATCH_STATE", watch)
         self.assertIn("DRIVE_SOURCE_FOLDER_ID", watch)
+        sync = self.workflow.split("  sync:\n", 1)[1]
+        self.assertIn("needs: watch", sync)
+        self.assertIn("if: always() && !cancelled()", sync)
+        self.assertIn("DRIVE_PUSH_CHANNEL_STATUS", sync)
         self.assertIn('"drive_push_channel"', self.workflow)
 
     def test_cloudflare_deploy_workflow_is_main_only_or_manual_and_scoped(self):
@@ -43,6 +52,9 @@ class WorkflowConfigTests(unittest.TestCase):
         preflight = deploy.split("- name: Check deployment credentials", 1)[1].split("- name: Deploy Worker and install its secrets", 1)[0]
         self.assertIn("branches: [main]", deploy)
         self.assertIn("workflow_dispatch:", deploy)
+        self.assertIn("smoke_test_dispatch:", deploy)
+        self.assertIn("default: false", deploy)
+        self.assertIn("Verify Worker can dispatch the sync workflow", deploy)
         self.assertIn("cloudflare/wrangler-action@v4", deploy)
         self.assertIn("CLOUDFLARE_API_TOKEN", deploy)
         self.assertIn("DRIVE_DISPATCH_TOKEN", deploy)
@@ -51,8 +63,10 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("DRIVE_WEBHOOK_TOKEN", deploy)
         self.assertNotIn("DRIVE_STATE_API_TOKEN", deploy)
         self.assertIn("DRIVE_DISPATCH_TOKEN: ${{ secrets.DRIVE_DISPATCH_TOKEN }}", preflight)
-        self.assertIn("DRIVE_STATE_API_TOKEN: ${{ secrets.DRIVE_DISPATCH_TOKEN }}", self.workflow)
+        self.assertNotIn("DRIVE_STATE_API_TOKEN", self.workflow)
         self.assertIn("DRIVE_WEBHOOK_URL", self.readme)
+        self.assertIn("token OIDC GitHub a breve durata", self.readme)
+        self.assertIn("non serve un secret condiviso per l'API di stato", self.readme)
         self.assertIn("/health", deploy)
         self.assertIn('"User-Agent":"technical-sheets-health-check"', deploy)
         self.assertNotIn("variables: write", deploy)
@@ -116,7 +130,8 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("DRIVE_DISPATCH_TOKEN", self.readme)
         self.assertIn("DRIVE_WEBHOOK_TOKEN", self.readme)
         self.assertIn("Durable Object", self.readme)
-        self.assertIn("protetto da `DRIVE_WEBHOOK_TOKEN`", self.readme)
+        self.assertIn("token OIDC GitHub a breve durata", self.readme)
+        self.assertIn("non serve un secret condiviso per l'API di stato", self.readme)
         self.assertNotIn("DRIVE_WATCH_STATE", self.readme)
 
 

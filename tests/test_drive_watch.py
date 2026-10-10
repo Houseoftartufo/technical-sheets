@@ -1,5 +1,6 @@
 import json
 import unittest
+from urllib.parse import parse_qs, urlsplit
 from unittest.mock import Mock, call
 from unittest.mock import patch
 
@@ -38,9 +39,30 @@ class DriveWatchTests(unittest.TestCase):
         get_request = urlopen.call_args_list[0].args[0]
         put_request = urlopen.call_args_list[1].args[0]
         self.assertEqual(get_request.full_url, "https://worker.example/watch-state")
-        self.assertEqual(get_request.get_header("X-drive-watch-secret"), "state-secret-token")
+        self.assertEqual(get_request.get_header("Authorization"), "Bearer state-secret-token")
         self.assertEqual(put_request.get_method(), "PUT")
         self.assertEqual(json.loads(put_request.data), {"id": "channel-2"})
+
+    @patch.dict("os.environ", {
+        "ACTIONS_ID_TOKEN_REQUEST_URL": "https://token.actions.githubusercontent.com/idtoken?api-version=2",
+        "ACTIONS_ID_TOKEN_REQUEST_TOKEN": "runner-request-token",
+    })
+    @patch("_BUILD.ensure_drive_watch.urllib.request.urlopen")
+    def test_requests_github_oidc_token_with_the_worker_audience(self, urlopen):
+        urlopen.return_value.__enter__.return_value.read.return_value = b'{"value":"signed-oidc-token"}'
+        token = ensure_drive_watch.request_github_oidc_token()
+        self.assertEqual(token, "signed-oidc-token")
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.get_header("Authorization"), "Bearer runner-request-token")
+        self.assertEqual(parse_qs(urlsplit(request.full_url).query), {
+            "api-version": ["2"],
+            "audience": [ensure_drive_watch.GITHUB_OIDC_AUDIENCE],
+        })
+
+    @patch.dict("os.environ", {}, clear=True)
+    def test_oidc_request_requires_the_actions_identity_endpoint(self):
+        with self.assertRaisesRegex(RuntimeError, "id-token: write"):
+            ensure_drive_watch.request_github_oidc_token()
 
     def test_missing_webhook_configuration_skips_without_drive_calls(self):
         result = ensure_drive_watch.ensure(Mock(), {"webhook_url": "", "webhook_token": ""}, Mock())
