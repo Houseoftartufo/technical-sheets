@@ -29,7 +29,6 @@ In **Settings → Secrets and variables → Actions** configura:
 - `DRIVE_CATALOG_FOLDER_ID`: ID della cartella **HOUSE_OF_TARTUFO_PREMIUM** sul Drive condiviso.
 - `CLOUDFLARE_ACCOUNT_ID`: ID dell'account Cloudflare che ospita il Worker.
 - `DRIVE_WEBHOOK_URL`: URL stabile del Worker `https://technical-sheets-drive-webhook.house-of-tartufo.workers.dev`, da impostare una volta sola dopo il primo deploy.
-- `DRIVE_WATCH_STATE`: stato del canale Drive, gestito e rinnovato automaticamente dal workflow.
 
 Condividi con l'indirizzo service account le cartelle **ELABORATE**, di ingresso (se usata) e del catalogo. La variabile `DRIVE_PROCESSED_FOLDER_ID` deve puntare alla cartella ELABORATE già esistente: il workflow non ne crea una seconda.
 
@@ -42,7 +41,7 @@ Per attivarlo una volta sola:
 1. In GitHub aggiungi i tre secret Cloudflare/GitHub elencati sopra e la variabile `CLOUDFLARE_ACCOUNT_ID`.
 2. Crea `DRIVE_WEBHOOK_TOKEN` localmente (per esempio con `python -c "import secrets; print(secrets.token_urlsafe(48))"`) e inseriscilo direttamente come secret GitHub. Non inviarlo in chat né inserirlo nei file del repository.
 3. Avvia **Actions → Deploy Drive webhook → Run workflow** su `main`. Il workflow installa i due secret nel Worker e verifica il suo endpoint. Imposta una volta la variabile `DRIVE_WEBHOOK_URL` all'URL stabile indicato sopra; i deploy successivi non richiedono altre modifiche.
-4. Al successivo controllo automatico (entro 5 minuti) il workflow registra il canale Google Drive e salva `DRIVE_WATCH_STATE`. Da quel momento gli upload e le rimozioni generano l'avvio automatico; il polling rimane attivo come rete di sicurezza.
+4. Al successivo controllo automatico (entro 5 minuti) il workflow registra il canale Google Drive e salva lo stato nel Durable Object Cloudflare, protetto da `DRIVE_WEBHOOK_TOKEN`. Da quel momento gli upload e le rimozioni generano l'avvio automatico; il polling rimane attivo come rete di sicurezza.
 
 Google fa scadere i canali `changes` entro sette giorni: il workflow li rinnova un giorno prima della scadenza, senza richiedere interventi periodici. Il report di ogni sincronizzazione indica lo stato del canale. Se mancano i secret, il deploy automatico viene saltato in modo visibile e il polling continua.
 

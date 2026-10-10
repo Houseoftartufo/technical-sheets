@@ -29,6 +29,22 @@ describe("Drive webhook on the Cloudflare Workers runtime", () => {
     expect(await result.text()).toBe("ok");
   });
 
+  it("protects persistent Drive watch state with the webhook secret", async () => {
+    const denied = await invoke(new Request("https://worker.example/watch-state"));
+    expect(denied.status).toBe(403);
+
+    const headers = { Authorization: "Bearer fixture-drive-token" };
+    const saved = { id: "channel-1", resource_id: "resource-1", drive_id: "drive-1", expiration_ms: "1900000000000" };
+    const put = await invoke(new Request("https://worker.example/watch-state", {
+      method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify(saved),
+    }));
+    expect(put.status).toBe(200);
+
+    const get = await invoke(new Request("https://worker.example/watch-state", { headers }));
+    expect(get.status).toBe(200);
+    expect(await get.json()).toEqual(saved);
+  });
+
   it("rejects an invalid Google channel token and does not queue work", async () => {
     const result = await invoke(notification("update", "wrong-token"));
     expect(result.status).toBe(403);
