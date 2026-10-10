@@ -132,6 +132,15 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/health") return response(200, "ok");
+    if (url.pathname === "/dispatch-status") {
+      if (request.method !== "GET") return response(405, "method not allowed");
+      if (!(await equalSecret(request.headers.get("X-Goog-Channel-Token"), env.DRIVE_WEBHOOK_TOKEN))) {
+        return response(403, "forbidden");
+      }
+      if (!env.DISPATCHER) return response(503, "dispatch service is not configured");
+      const status = await env.DISPATCHER.getByName("drive-change-batcher").getDispatchStatus();
+      return Response.json(status, { headers: { "Cache-Control": "no-store" } });
+    }
     if (url.pathname === "/watch-state") {
       const bearerToken = request.headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
       let authorized;
@@ -183,7 +192,9 @@ export default {
     if (state === "sync" || !CHANGE_STATES.has(state)) return response(204);
     if (!env.DISPATCHER) return response(503, "dispatch service is not configured");
     try {
-      await env.DISPATCHER.getByName("drive-change-batcher").schedule();
+      await env.DISPATCHER.getByName("drive-change-batcher").schedule(
+        request.headers.get("X-Goog-Channel-ID"),
+      );
       return response(202, "accepted");
     } catch {
       return response(503, "dispatch unavailable");
@@ -204,9 +215,29 @@ export class DriveDispatchDebouncer extends DurableObject {
     this.ctx.storage.sql.exec("INSERT OR IGNORE INTO dispatch_state (id) VALUES (1)");
   }
 
-  async schedule() {
+  async schedule(channelId = null) {
     this.ctx.storage.sql.exec("UPDATE dispatch_state SET revision = revision + 1 WHERE id = 1");
+    const revision = this.ctx.storage.sql.exec(
+      "SELECT revision FROM dispatch_state WHERE id = 1",
+    ).one().revision;
+    await this.ctx.storage.put("dispatch-status", {
+      channel_id: channelId,
+      revision,
+      status: "pending",
+      http_status: null,
+      updated_at: Date.now(),
+    });
     await this.ctx.storage.setAlarm(Date.now() + 20_000);
+  }
+
+  async getDispatchStatus() {
+    return (await this.ctx.storage.get("dispatch-status")) ?? null;
+  }
+
+  async setDispatchStatus(revision, updates) {
+    const current = await this.getDispatchStatus();
+    if (!current || current.revision !== revision) return;
+    await this.ctx.storage.put("dispatch-status", { ...current, ...updates, updated_at: Date.now() });
   }
 
   async getWatchState() {
@@ -225,6 +256,7 @@ export class DriveDispatchDebouncer extends DurableObject {
       "SELECT attempts FROM dispatch_state WHERE id = 1",
     ).one().attempts;
 
+    let failureStatus = null;
     try {
       const upstream = await fetch(
         `https://api.github.com/repos/${REPOSITORY}/actions/workflows/${WORKFLOW}/dispatches`,
@@ -240,6 +272,8 @@ export class DriveDispatchDebouncer extends DurableObject {
         },
       );
       if (!upstream.ok) {
+        failureStatus = { status: "http_error", http_status: upstream.status };
+        await this.setDispatchStatus(dispatchedRevision, failureStatus);
         console.error(JSON.stringify({ event: "github_dispatch_failed", status: upstream.status, attempt: attempt + 1 }));
         throw new Error("GitHub workflow dispatch failed");
       }
@@ -248,8 +282,16 @@ export class DriveDispatchDebouncer extends DurableObject {
         "UPDATE dispatch_state SET revision = 0, attempts = 0 WHERE id = 1 AND revision = ?",
         dispatchedRevision,
       ).rowsWritten;
-      if (cleared === 0) await this.ctx.storage.setAlarm(Date.now() + 20_000);
+      if (cleared === 0) {
+        await this.ctx.storage.setAlarm(Date.now() + 20_000);
+      } else {
+        await this.setDispatchStatus(dispatchedRevision, { status: "sent", http_status: upstream.status });
+      }
     } catch (error) {
+      if (!failureStatus) {
+        failureStatus = { status: "network_error", http_status: null };
+        await this.setDispatchStatus(dispatchedRevision, failureStatus);
+      }
       if (error instanceof TypeError) {
         console.error(JSON.stringify({ event: "github_dispatch_network_error", attempt: attempt + 1 }));
       }

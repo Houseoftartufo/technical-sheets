@@ -49,7 +49,11 @@ function mockGithubOidcKeys() {
 function notification(state = "update", token = "fixture-drive-token") {
   return new Request("https://worker.example/drive", {
     method: "POST",
-    headers: { "X-Goog-Channel-Token": token, "X-Goog-Resource-State": state },
+    headers: {
+      "X-Goog-Channel-Token": token,
+      "X-Goog-Channel-ID": "fixture-channel",
+      "X-Goog-Resource-State": state,
+    },
   });
 }
 
@@ -172,6 +176,33 @@ describe("Drive webhook on the Cloudflare Workers runtime", () => {
     expect(revision).toBe(1);
   });
 
+  it("protects dispatch status and returns only the latest safe result", async () => {
+    const denied = await invoke(new Request("https://worker.example/dispatch-status", {
+      headers: { "X-Goog-Channel-Token": "wrong-token" },
+    }));
+    expect(denied.status).toBe(403);
+
+    const stub = env.DISPATCHER.getByName("drive-change-batcher");
+    await runInDurableObject(stub, (instance) => instance.ctx.storage.put("dispatch-status", {
+      channel_id: "smoke-123",
+      revision: 7,
+      status: "http_error",
+      http_status: 403,
+      updated_at: 1900000000000,
+    }));
+    const result = await invoke(new Request("https://worker.example/dispatch-status", {
+      headers: { "X-Goog-Channel-Token": "fixture-drive-token" },
+    }));
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({
+      channel_id: "smoke-123",
+      revision: 7,
+      status: "http_error",
+      http_status: 403,
+      updated_at: 1900000000000,
+    });
+  });
+
   it("coalesces a burst and dispatches only the fixed main workflow", async () => {
     const stub = env.DISPATCHER.getByName("drive-change-batcher");
     let dispatches = 0;
@@ -194,6 +225,8 @@ describe("Drive webhook on the Cloudflare Workers runtime", () => {
     );
     expect(state.revision).toBe(0);
     expect(state.attempts).toBe(0);
+    await expect(runInDurableObject(stub, (instance) => instance.ctx.storage.get("dispatch-status")))
+      .resolves.toMatchObject({ channel_id: "fixture-channel", status: "sent", http_status: 204 });
   });
 
   it("retries a failed GitHub dispatch and succeeds on the following alarm", async () => {
@@ -214,6 +247,8 @@ describe("Drive webhook on the Cloudflare Workers runtime", () => {
       instance.ctx.storage.sql.exec("SELECT attempts FROM dispatch_state WHERE id = 1").one().attempts,
     );
     expect(attempts).toBe(1);
+    await expect(runInDurableObject(stub, (instance) => instance.ctx.storage.get("dispatch-status")))
+      .resolves.toMatchObject({ status: "http_error", http_status: 503 });
     await runDurableObjectAlarm(stub);
     expect(dispatches).toBe(2);
     const finalState = await runInDurableObject(stub, (instance) =>
@@ -221,5 +256,7 @@ describe("Drive webhook on the Cloudflare Workers runtime", () => {
     );
     expect(finalState.revision).toBe(0);
     expect(finalState.attempts).toBe(0);
+    await expect(runInDurableObject(stub, (instance) => instance.ctx.storage.get("dispatch-status")))
+      .resolves.toMatchObject({ channel_id: "fixture-channel", status: "sent", http_status: 204 });
   });
 });

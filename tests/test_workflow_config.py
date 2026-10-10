@@ -55,6 +55,8 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("smoke_test_dispatch:", deploy)
         self.assertIn("default: false", deploy)
         self.assertIn("Verify Worker can dispatch the sync workflow", deploy)
+        self.assertIn("/dispatch-status", deploy)
+        self.assertIn('status.get("channel_id")', deploy)
         self.assertIn("Verify GitHub dispatch credential can start the sync workflow", deploy)
         self.assertIn("GitHub dispatch credential verified with workflow run", deploy)
         self.assertIn("baseline_run_id", deploy)
