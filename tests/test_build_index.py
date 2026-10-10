@@ -38,6 +38,22 @@ class BuildIndexTests(unittest.TestCase):
         self.assertEqual(len(re.findall(r'<div class="card(?: |")', html)), 27)
         self.assertNotIn("28_TEST", html)
 
+    def test_index_uses_house_of_tartufo_ui_kit_and_keeps_mobile_language_controls(self):
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "index.html"
+            self.run_builder("--output", output)
+            html = output.read_text(encoding="utf-8")
+
+        self.assertIn("Cormorant Garamond", html)
+        self.assertIn("Manrope", html)
+        self.assertIn("#f6f2ea", html)
+        self.assertIn("#5b4030", html)
+        self.assertIn("position:sticky", html)
+        self.assertRegex(html, r"@media\s*\(max-width:\s*760px\)")
+        self.assertIn("min-height:44px", html)
+        for language in ("ITA", "FR", "ENG", "NL", "DE"):
+            self.assertIn(f'data-l="{language}"', html)
+
     def test_static_products_can_be_filtered_by_authoritative_manifest(self):
         with tempfile.TemporaryDirectory() as temp:
             site = Path(temp) / "site"
