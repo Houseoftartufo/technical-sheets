@@ -5,7 +5,7 @@ Catalogo multilingue House of Tartufo, con schede generate dal motore ufficiale 
 ## Caricamento nuove schede fornitori
 
 1. Aggiungi il PDF, DOC o DOCX originale del fornitore in **DA_ELABORARE**. Dopo estrazione, validazione, traduzione, anteprima e pubblicazione, il workflow lo sposta in **ELABORATE**, la lista autorevole dei prodotti pubblicati. È possibile aggiungere direttamente in ELABORATE solo un originale già approvato.
-2. GitHub Actions controlla la cartella ogni 5 minuti. È un controllo automatico periodico: GitHub può ritardare o saltare le esecuzioni pianificate, quindi non è un evento istantaneo di Drive. Puoi anche avviare **Run workflow**: la preview è la modalità predefinita e solo da `main` puoi scegliere esplicitamente la pubblicazione ufficiale.
+2. Dopo la configurazione del webhook Cloudflare, le modifiche su Drive avviano la sincronizzazione in pochi secondi; gli eventi vicini vengono raggruppati. GitHub Actions continua anche a controllare la cartella ogni 5 minuti come recupero automatico. Puoi avviare **Run workflow** manualmente: la preview è la modalità predefinita.
 3. Il job estrae e valida i dati, crea le cinque lingue e genera HTML/PDF con `_BUILD/engine.py` e lo stesso layout del catalogo. Le informazioni mancanti non vengono inventate.
 4. Dopo preview e controlli, il workflow pubblica il bundle completo. Solo dopo il deploy ufficiale riuscito rinomina il documento in `CODICE_PRODOTTO__nome-originale.pdf` (o mantiene l'estensione Word), così resta ordinato in **ELABORATE**. Preview e run falliti non modificano Drive.
 
@@ -19,13 +19,34 @@ In **Settings → Secrets and variables → Actions** configura:
 - `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON`: JSON completo del service account.
 - `OPENAI_API_KEY`: chiave API usata per estrazione e traduzione.
 - `GOOGLE_DRIVE_IMPERSONATED_USER`: opzionale, solo per delega Workspace in My Drive.
+- `CLOUDFLARE_API_TOKEN`: token Cloudflare con permesso **Workers Edit**, limitato all'account usato per il Worker.
+- `GITHUB_DISPATCH_TOKEN`: token fine-grained limitato a questa repository con il solo permesso **Actions: write**; consente al Worker di avviare il workflow.
+- `DRIVE_WEBHOOK_TOKEN`: valore casuale di almeno 32 byte, condiviso solo tra il canale Drive e il Worker; viene caricato sul Worker dal workflow di deploy.
 
 **Variables**
 - `DRIVE_SOURCE_FOLDER_ID`: ID della cartella di ingresso facoltativa **DA ELABORARE**; i nuovi originali possono essere messi direttamente in ELABORATE.
 - `DRIVE_PROCESSED_FOLDER_ID`: ID della cartella autorevole **ELABORATE** (`1RcuKuZrdGgQUOq-2j-Nr-tcdnGDsWhGX`).
 - `DRIVE_CATALOG_FOLDER_ID`: ID della cartella **HOUSE_OF_TARTUFO_PREMIUM** sul Drive condiviso.
+- `CLOUDFLARE_ACCOUNT_ID`: ID dell'account Cloudflare che ospita il Worker.
+- `DRIVE_WEBHOOK_URL`: viene salvato automaticamente dopo che il deploy del Worker supera il controllo HTTPS `/health`.
+- `DRIVE_WATCH_STATE`: stato del canale Drive, gestito e rinnovato automaticamente dal workflow.
 
 Condividi con l'indirizzo service account le cartelle **ELABORATE**, di ingresso (se usata) e del catalogo. La variabile `DRIVE_PROCESSED_FOLDER_ID` deve puntare alla cartella ELABORATE già esistente: il workflow non ne crea una seconda.
+
+## Attivazione immediata Drive con Cloudflare
+
+Il workflow `Deploy Drive webhook` crea un endpoint HTTPS Cloudflare Worker. Un Durable Object raggruppa notifiche ravvicinate e ritenta il dispatch se GitHub non è momentaneamente disponibile. Il Worker riceve solo gli header di notifica; non accede ai documenti né alle credenziali Google/OpenAI. La sincronizzazione continua a confrontare lo stato reale del Drive e passa sempre dal motore e dai controlli esistenti.
+
+Per attivarlo una volta sola:
+
+1. In GitHub aggiungi i tre secret Cloudflare/GitHub elencati sopra e la variabile `CLOUDFLARE_ACCOUNT_ID`.
+2. Crea `DRIVE_WEBHOOK_TOKEN` localmente (per esempio con `python -c "import secrets; print(secrets.token_urlsafe(48))"`) e inseriscilo direttamente come secret GitHub. Non inviarlo in chat né inserirlo nei file del repository.
+3. Avvia **Actions → Deploy Drive webhook → Run workflow** su `main`. Il workflow installa i due secret nel Worker, verifica il suo endpoint e salva `DRIVE_WEBHOOK_URL`.
+4. Al successivo controllo automatico (entro 5 minuti) il workflow registra il canale Google Drive e salva `DRIVE_WATCH_STATE`. Da quel momento gli upload e le rimozioni generano l'avvio automatico; il polling rimane attivo come rete di sicurezza.
+
+Google fa scadere i canali `changes` entro sette giorni: il workflow li rinnova un giorno prima della scadenza, senza richiedere interventi periodici. Il report di ogni sincronizzazione indica lo stato del canale. Se mancano i secret, il deploy automatico viene saltato in modo visibile e il polling continua.
+
+Il token fine-grained GitHub può avere una data di scadenza: prima che scada, rinnovalo e aggiorna il secret `GITHUB_DISPATCH_TOKEN`. Il workflow di deploy successivo aggiornerà il secret sul Worker.
 
 ## Pubblicazione e anteprima
 
