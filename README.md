@@ -29,7 +29,7 @@ Condividi con l'indirizzo service account le cartelle **ELABORATE**, di ingresso
 
 ## Pubblicazione e anteprima
 
-La repo è già collegata a Vercel tramite GitHub: il workflow crea una pull request con il catalogo validato e Vercel genera la preview automaticamente. Dopo il superamento dei controlli sulla preview, gli eventi pianificati e quelli avviati da `main` possono unire la pull request; Vercel pubblica quindi il nuovo `main` sul dominio ufficiale. Una esecuzione manuale resta in preview per impostazione predefinita. Il job verifica che indice e PDF siano effettivamente visibili sul sito ufficiale prima di rinominare gli originali o aggiornare il manifest Drive. Non servono Vercel CLI, token, ID di team/progetto o modifiche a **Ignored Build Step**. Mantieni attiva l'integrazione GitHub già collegata al progetto Vercel.
+La repo è già collegata a Vercel tramite GitHub. Il workflow crea un branch temporaneo, attende che Vercel completi la preview, controlla il bundle e solo dopo aggiorna `main`; Vercel pubblica quindi il nuovo catalogo sul dominio ufficiale. Una esecuzione manuale resta in preview per impostazione predefinita. Il job verifica che indice e PDF siano effettivamente visibili sul sito ufficiale prima di rinominare gli originali o aggiornare il manifest Drive. Non servono Vercel CLI, token, permessi GitHub aggiuntivi o modifiche a **Ignored Build Step**. Mantieni attiva l'integrazione GitHub già collegata al progetto Vercel.
 
 ## Integrità dei contenuti
 
