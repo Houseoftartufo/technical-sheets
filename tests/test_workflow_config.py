@@ -41,6 +41,8 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertNotIn("git add .", self.workflow)
         self.assertIn('paths.update(plan["active_products"])', self.workflow)
         self.assertIn('paths.update(plan["removed_folders"])', self.workflow)
+        self.assertIn('git rebase "origin/$BRANCH"', self.workflow)
+        self.assertNotIn("--force", self.workflow)
 
     def test_preview_and_production_checks_precede_drive_finalization(self):
         preview = self.workflow.index("Wait for Vercel Git preview checks")
