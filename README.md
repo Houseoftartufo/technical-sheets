@@ -18,21 +18,18 @@ In **Settings → Secrets and variables → Actions** configura:
 **Secrets**
 - `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON`: JSON completo del service account.
 - `OPENAI_API_KEY`: chiave API usata per estrazione e traduzione.
-- `VERCEL_TOKEN`: token Vercel con accesso al progetto catalogo.
 - `GOOGLE_DRIVE_IMPERSONATED_USER`: opzionale, solo per delega Workspace in My Drive.
 
 **Variables**
 - `DRIVE_SOURCE_FOLDER_ID`: ID della cartella di ingresso facoltativa **DA ELABORARE**; i nuovi originali possono essere messi direttamente in ELABORATE.
 - `DRIVE_PROCESSED_FOLDER_ID`: ID della cartella autorevole **ELABORATE** (`1RcuKuZrdGgQUOq-2j-Nr-tcdnGDsWhGX`).
 - `DRIVE_CATALOG_FOLDER_ID`: ID della cartella **HOUSE_OF_TARTUFO_PREMIUM** sul Drive condiviso.
-- `VERCEL_ORG_ID`: ID dell'organizzazione Vercel.
-- `VERCEL_PROJECT_ID`: ID del progetto Vercel collegato al dominio ufficiale.
 
 Condividi con l'indirizzo service account le cartelle **ELABORATE**, di ingresso (se usata) e del catalogo. La variabile `DRIVE_PROCESSED_FOLDER_ID` deve puntare alla cartella ELABORATE già esistente: il workflow non ne crea una seconda.
 
-## Evitare deploy Git Vercel concorrenti
+## Pubblicazione e anteprima
 
-Il workflow pubblica il bundle completo attraverso Vercel CLI per mantenere online i prodotti ancora presenti in ELABORATE. I 27 prodotti storici vengono presi dal repository e conservati byte per byte al bootstrap. Si collega in modo non interattivo all'ID progetto e team configurati nelle variabili GitHub. In Vercel apri **Project → Settings → Build and Deployment → Ignored Build Step** e imposta `exit 0` per saltare i deploy avviati dai push Git. Il deploy ufficiale viene avviato dal workflow con Vercel CLI, non dai commit Git. Verifica una preview e un deploy CLI prima di affidarti alla sincronizzazione automatica; non disconnettere il repository.
+La repo è già collegata a Vercel tramite GitHub: il workflow crea una pull request con il catalogo validato e Vercel genera la preview automaticamente. Dopo il superamento dei controlli sulla preview, gli eventi pianificati e quelli avviati da `main` possono unire la pull request; Vercel pubblica quindi il nuovo `main` sul dominio ufficiale. Una esecuzione manuale resta in preview per impostazione predefinita. Il job verifica che indice e PDF siano effettivamente visibili sul sito ufficiale prima di rinominare gli originali o aggiornare il manifest Drive. Non servono Vercel CLI, token, ID di team/progetto o modifiche a **Ignored Build Step**. Mantieni attiva l'integrazione GitHub già collegata al progetto Vercel.
 
 ## Integrità dei contenuti
 
