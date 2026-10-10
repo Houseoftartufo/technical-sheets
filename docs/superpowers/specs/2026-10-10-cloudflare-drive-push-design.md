@@ -27,7 +27,7 @@ Al primo run dopo aver configurato `DRIVE_WEBHOOK_URL` e `DRIVE_WEBHOOK_TOKEN`, 
 
 ## Configurazione una tantum
 
-GitHub repository secret `CLOUDFLARE_API_TOKEN` (permesso Cloudflare Workers Edit), repository variable `CLOUDFLARE_ACCOUNT_ID`, GitHub repository secret `DRIVE_DISPATCH_TOKEN` (Actions: write, repository-only), e un `DRIVE_WEBHOOK_TOKEN` casuale creato localmente e salvato direttamente come secret GitHub. Il workflow installa quest'ultimo e `DRIVE_DISPATCH_TOKEN` nel Worker come binding interno `GITHUB_DISPATCH_TOKEN`, verifica `/health` e salva `DRIVE_WEBHOOK_URL`. Il canale viene attivato dal successivo run schedulato o manuale. `DRIVE_WATCH_STATE` è gestito dal workflow e non va inserito a mano.
+GitHub repository secret `CLOUDFLARE_API_TOKEN` (permesso Cloudflare Workers Edit), repository variable `CLOUDFLARE_ACCOUNT_ID`, GitHub repository secret `DRIVE_DISPATCH_TOKEN` (Actions: write, repository-only), repository variable `DRIVE_WEBHOOK_URL` impostata una volta all'URL workers.dev stabile, e un `DRIVE_WEBHOOK_TOKEN` casuale salvato come secret GitHub. Il workflow installa i due secrets nel Worker con il binding interno `GITHUB_DISPATCH_TOKEN`, poi verifica `/health`. Il canale viene attivato dal successivo run schedulato o manuale. `DRIVE_WATCH_STATE` è gestito dal workflow e non va inserito a mano.
 
 ## Criteri di accettazione
 
@@ -40,7 +40,7 @@ GitHub repository secret `CLOUDFLARE_API_TOKEN` (permesso Cloudflare Workers Edi
 | Canale viene rinnovato prima della scadenza | Test che verifica nessun rinnovo oltre soglia e rinnovo sotto 24 ore |
 | Errore di rinnovo o dispatch non perde il polling | Workflow cron resta ogni cinque minuti e report diagnostico |
 | Catalogo pubblico e prodotti esistenti restano intatti | Nessun cambiamento al generatore; invarianti suite esistente e nessun PDF rigenerato in sync senza modifiche |
-| Deploy Cloudflare automatizzato | Workflow deploy condizionato ai secrets e URL Worker registrato come repository variable |
+| Deploy Cloudflare automatizzato | Workflow deploy condizionato ai secrets e URL Worker configurato come repository variable stabile |
 
 ## Limiti operativi
 
