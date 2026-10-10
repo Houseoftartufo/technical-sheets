@@ -50,6 +50,14 @@ describe("Drive webhook on the Cloudflare Workers runtime", () => {
     expect(result.status).toBe(403);
   });
 
+  it("ignores surrounding whitespace accidentally included in a configured token", async () => {
+    const result = await worker.fetch(notification("sync"), {
+      ...env,
+      DRIVE_WEBHOOK_TOKEN: " fixture-drive-token\r\n",
+    }, { waitUntil() {} });
+    expect(result.status).toBe(204);
+  });
+
   it("ignores Drive's initial sync and unknown notification states", async () => {
     expect((await invoke(notification("sync"))).status).toBe(204);
     expect((await invoke(notification("future-state"))).status).toBe(204);
