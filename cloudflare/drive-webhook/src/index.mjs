@@ -7,6 +7,9 @@ const CHANGE_STATES = new Set(["add", "update", "remove", "trash", "untrash", "c
 
 async function equalSecret(actual, expected) {
   if (typeof actual !== "string" || typeof expected !== "string" || expected.length === 0) return false;
+  actual = actual.trim();
+  expected = expected.trim();
+  if (actual.length === 0 || expected.length === 0) return false;
   const encoder = new TextEncoder();
   const [actualHash, expectedHash] = await Promise.all([
     crypto.subtle.digest("SHA-256", encoder.encode(actual)),
