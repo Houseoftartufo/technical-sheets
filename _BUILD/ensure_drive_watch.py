@@ -79,6 +79,7 @@ class WorkerDriveWatchState:
                 "Accept": "application/json",
                 "Content-Type": "application/json",
                 "Cache-Control": "no-store",
+                "User-Agent": "technical-sheets-drive-sync/1.0 (+https://github.com/Houseoftartufo/technical-sheets)",
             },
         )
         try:
