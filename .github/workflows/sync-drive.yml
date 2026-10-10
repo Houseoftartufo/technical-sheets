@@ -24,9 +24,44 @@ permissions:
   statuses: read
 
 jobs:
+  watch:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      status: ${{ steps.watch.outputs.status }}
+      step_outcome: ${{ steps.watch.outcome }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Drive watcher dependencies
+        run: pip install google-api-python-client google-auth
+      - name: Maintain Google Drive push channel
+        id: watch
+        continue-on-error: true
+        env:
+          GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
+          DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID || secrets.DRIVE_SOURCE_FOLDER_ID }}
+          DRIVE_WEBHOOK_URL: ${{ vars.DRIVE_WEBHOOK_URL }}
+          DRIVE_WEBHOOK_TOKEN: ${{ secrets.DRIVE_WEBHOOK_TOKEN }}
+        run: python _BUILD/ensure_drive_watch.py
+
   sync:
+    needs: watch
+    if: always() && !cancelled()
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      actions: write
+      contents: write
+      deployments: read
+      statuses: read
     env:
       DRIVE_RUN_DIR: /tmp/technical-sheets-run
       DRIVE_GENERATED_DIR: /tmp/technical-sheets-generated
@@ -44,17 +79,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libharfbuzz-subset0 poppler-utils libreoffice-writer
           pip install -r requirements-drive.txt
-      - name: Maintain Google Drive push channel
-        id: watch
-        continue-on-error: true
-        env:
-          GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
-          GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
-          DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID || secrets.DRIVE_SOURCE_FOLDER_ID }}
-          DRIVE_WEBHOOK_URL: ${{ vars.DRIVE_WEBHOOK_URL }}
-          DRIVE_WEBHOOK_TOKEN: ${{ secrets.DRIVE_WEBHOOK_TOKEN }}
-          DRIVE_STATE_API_TOKEN: ${{ secrets.DRIVE_DISPATCH_TOKEN }}
-        run: python _BUILD/ensure_drive_watch.py
       - name: Prepare sync run
         id: prepare
         env:
@@ -64,6 +88,8 @@ jobs:
           DRIVE_PROCESSED_FOLDER_ID: ${{ vars.DRIVE_PROCESSED_FOLDER_ID }}
           DRIVE_CATALOG_FOLDER_ID: ${{ vars.DRIVE_CATALOG_FOLDER_ID || secrets.DRIVE_CATALOG_FOLDER_ID }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DRIVE_PUSH_CHANNEL_STATUS: ${{ needs.watch.outputs.status || 'unknown' }}
+          DRIVE_PUSH_CHANNEL_STEP: ${{ needs.watch.outputs.step_outcome || needs.watch.result }}
         run: |
           mkdir -p "$DRIVE_RUN_DIR"
           python _BUILD/sync_drive.py
@@ -79,8 +105,7 @@ jobs:
               output.write(f"has_changes={str(dirty).lower()}\n")
               output.write(f"products_to_generate={len(plan['imported'])}\n")
           report=json.loads((run/"drive_sync_report.json").read_text(encoding="utf-8")); report["catalog_changed"]=dirty
-          watch_status=run/"drive_watch_status.json"
-          if watch_status.exists(): report["drive_push_channel"]=json.loads(watch_status.read_text(encoding="utf-8"))
+          report["drive_push_channel"]={"status":os.environ["DRIVE_PUSH_CHANNEL_STATUS"],"workflow_step":os.environ["DRIVE_PUSH_CHANNEL_STEP"]}
           (run/"drive_sync_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
           PY
       - name: Generate changed technical sheets with official engine
@@ -311,7 +336,7 @@ jobs:
           SMOKE_STATUS: ${{ steps.smoke.outcome }}
           PRODUCTION_STATUS: ${{ steps.production.outcome }}
           DRIVE_STATUS: ${{ steps.finalize.outcome }}
-          WATCH_STATUS: ${{ steps.watch.outcome }}
+          WATCH_STATUS: ${{ needs.watch.outputs.step_outcome || needs.watch.result }}
           PREVIEW_URL: ${{ steps.preview.outputs.url }}
           BRANCH_URL: ${{ steps.branch.outputs.url }}
           PRODUCTION_URL: https://technical.houseoftartufo.com
