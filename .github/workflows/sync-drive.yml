@@ -235,7 +235,7 @@ jobs:
           PY
       - name: Merge validated catalog PR to main
         id: production
-        if: success() && steps.smoke.outcome == 'success' && github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || github.event.inputs.publish_to_production == 'true')
+        if: success() && (steps.smoke.outcome == 'success' || (steps.prepare.outputs.has_changes == 'true' && steps.staged.outputs.has_commit != 'true')) && github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || github.event.inputs.publish_to_production == 'true')
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.branch.outputs.number }}
