@@ -18,6 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: write
   contents: write
   deployments: read
   statuses: read
@@ -43,6 +44,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libharfbuzz-subset0 poppler-utils libreoffice-writer
           pip install -r requirements-drive.txt
+      - name: Maintain Google Drive push channel
+        id: watch
+        continue-on-error: true
+        env:
+          GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
+          DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID || secrets.DRIVE_SOURCE_FOLDER_ID }}
+          DRIVE_WEBHOOK_URL: ${{ vars.DRIVE_WEBHOOK_URL }}
+          DRIVE_WEBHOOK_TOKEN: ${{ secrets.DRIVE_WEBHOOK_TOKEN }}
+          DRIVE_WATCH_STATE: ${{ vars.DRIVE_WATCH_STATE }}
+        run: python _BUILD/ensure_drive_watch.py
       - name: Prepare sync run
         id: prepare
         env:
@@ -67,6 +79,8 @@ jobs:
               output.write(f"has_changes={str(dirty).lower()}\n")
               output.write(f"products_to_generate={len(plan['imported'])}\n")
           report=json.loads((run/"drive_sync_report.json").read_text(encoding="utf-8")); report["catalog_changed"]=dirty
+          watch_status=run/"drive_watch_status.json"
+          if watch_status.exists(): report["drive_push_channel"]=json.loads(watch_status.read_text(encoding="utf-8"))
           (run/"drive_sync_report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
           PY
       - name: Generate changed technical sheets with official engine
@@ -297,6 +311,7 @@ jobs:
           SMOKE_STATUS: ${{ steps.smoke.outcome }}
           PRODUCTION_STATUS: ${{ steps.production.outcome }}
           DRIVE_STATUS: ${{ steps.finalize.outcome }}
+          WATCH_STATUS: ${{ steps.watch.outcome }}
           PREVIEW_URL: ${{ steps.preview.outputs.url }}
           BRANCH_URL: ${{ steps.branch.outputs.url }}
           PRODUCTION_URL: https://technical.houseoftartufo.com
@@ -308,7 +323,7 @@ jobs:
           path=Path(os.environ["DRIVE_RUN_DIR"])/"drive_sync_report.json"
           report=json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"status":"failed_before_prepare"}
           report["workflow_status"]=os.environ["JOB_STATUS"]
-          report["stages"]={"preview":os.environ.get("PREVIEW_STATUS"),"smoke_test":os.environ.get("SMOKE_STATUS"),"production":os.environ.get("PRODUCTION_STATUS"),"drive_finalize":os.environ.get("DRIVE_STATUS")}
+          report["stages"]={"drive_push_channel":os.environ.get("WATCH_STATUS"),"preview":os.environ.get("PREVIEW_STATUS"),"smoke_test":os.environ.get("SMOKE_STATUS"),"production":os.environ.get("PRODUCTION_STATUS"),"drive_finalize":os.environ.get("DRIVE_STATUS")}
           for key,value in (("preview_deployment_url",os.environ.get("PREVIEW_URL")),("preview_branch_url",os.environ.get("BRANCH_URL")),("production_deployment_url",os.environ.get("PRODUCTION_URL"))):
               if value: report[key]=value
           path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
