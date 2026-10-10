@@ -4,19 +4,109 @@ const REPOSITORY = "Houseoftartufo/technical-sheets";
 const WORKFLOW = "sync-drive.yml";
 const MAIN_REF = "main";
 const CHANGE_STATES = new Set(["add", "update", "remove", "trash", "untrash", "change"]);
+const GITHUB_OIDC_ISSUER = "https://token.actions.githubusercontent.com";
+const GITHUB_OIDC_JWKS_URL = `${GITHUB_OIDC_ISSUER}/.well-known/jwks`;
+const GITHUB_OIDC_AUDIENCE = "https://technical-sheets.houseoftartufo.com/drive-watch";
+const GITHUB_REPOSITORY_ID = "1261335289";
+const GITHUB_OWNER_ID = "275527893";
+const GITHUB_WORKFLOW_REF = "Houseoftartufo/technical-sheets/.github/workflows/sync-drive.yml@refs/heads/main";
+const encoder = new TextEncoder();
+
+let githubJwks;
+let githubJwksExpiresAt = 0;
 
 async function equalSecret(actual, expected) {
   if (typeof actual !== "string" || typeof expected !== "string" || expected.length === 0) return false;
   actual = actual.trim();
   expected = expected.trim();
   if (actual.length === 0 || expected.length === 0) return false;
-  const encoder = new TextEncoder();
   const actualBytes = encoder.encode(actual);
   const expectedBytes = encoder.encode(expected);
   if (actualBytes.byteLength !== expectedBytes.byteLength) {
     return !crypto.subtle.timingSafeEqual(actualBytes, actualBytes);
   }
   return crypto.subtle.timingSafeEqual(actualBytes, expectedBytes);
+}
+
+function decodeBase64Url(value) {
+  if (typeof value !== "string" || !/^[A-Za-z0-9_-]+$/.test(value)) return null;
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  try {
+    const binary = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="));
+    return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  } catch {
+    return null;
+  }
+}
+
+function decodeJsonSegment(value) {
+  const bytes = decodeBase64Url(value);
+  if (!bytes) return null;
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    return null;
+  }
+}
+
+async function getGithubJwks() {
+  if (githubJwks && Date.now() < githubJwksExpiresAt) return githubJwks;
+  const response = await fetch(GITHUB_OIDC_JWKS_URL, {
+    headers: { Accept: "application/json" },
+    cf: { cacheTtl: 300, cacheEverything: true },
+  });
+  if (!response.ok) throw new Error("GitHub OIDC signing keys are unavailable");
+  const body = await response.json();
+  if (!Array.isArray(body.keys)) throw new Error("GitHub OIDC signing keys are invalid");
+  githubJwks = body.keys;
+  githubJwksExpiresAt = Date.now() + 5 * 60 * 1000;
+  return githubJwks;
+}
+
+async function isTrustedGithubActionsToken(token) {
+  if (typeof token !== "string" || token.length > 8192) return false;
+  const parts = token.split(".");
+  if (parts.length !== 3) return false;
+  const header = decodeJsonSegment(parts[0]);
+  const claims = decodeJsonSegment(parts[1]);
+  const signature = decodeBase64Url(parts[2]);
+  if (!header || !claims || !signature || header.alg !== "RS256" || typeof header.kid !== "string") return false;
+
+  const now = Math.floor(Date.now() / 1000);
+  const audiences = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+  if (claims.iss !== GITHUB_OIDC_ISSUER || !audiences.includes(GITHUB_OIDC_AUDIENCE) ||
+      claims.repository !== "Houseoftartufo/technical-sheets" ||
+      String(claims.repository_id) !== GITHUB_REPOSITORY_ID ||
+      String(claims.repository_owner_id) !== GITHUB_OWNER_ID ||
+      claims.ref !== "refs/heads/main" || claims.workflow_ref !== GITHUB_WORKFLOW_REF ||
+      !["push", "schedule", "workflow_dispatch"].includes(claims.event_name) ||
+      !Number.isInteger(claims.iat) || !Number.isInteger(claims.nbf) || !Number.isInteger(claims.exp) ||
+      claims.iat > now + 30 || claims.nbf > now + 30 || claims.exp <= now ||
+      claims.exp <= claims.iat || claims.exp - claims.iat > 600) {
+    return false;
+  }
+
+  const keys = await getGithubJwks();
+  let jwk = keys.find((candidate) => candidate.kid === header.kid && candidate.kty === "RSA");
+  if (!jwk) {
+    githubJwksExpiresAt = 0;
+    jwk = (await getGithubJwks()).find((candidate) => candidate.kid === header.kid && candidate.kty === "RSA");
+  }
+  if (!jwk) return false;
+
+  const key = await crypto.subtle.importKey(
+    "jwk",
+    jwk,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["verify"],
+  );
+  return crypto.subtle.verify(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    signature,
+    encoder.encode(`${parts[0]}.${parts[1]}`),
+  );
 }
 
 function response(status, body = "") {
@@ -31,8 +121,14 @@ export default {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/health") return response(200, "ok");
     if (url.pathname === "/watch-state") {
-      if (!env.GITHUB_DISPATCH_TOKEN) return response(503, "watch state is not configured");
-      if (!(await equalSecret(request.headers.get("X-Drive-Watch-Secret"), env.GITHUB_DISPATCH_TOKEN))) {
+      const bearerToken = request.headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+      let authorized;
+      try {
+        authorized = await isTrustedGithubActionsToken(bearerToken);
+      } catch {
+        return response(503, "GitHub authentication is temporarily unavailable");
+      }
+      if (!authorized) {
         return response(403, "forbidden");
       }
       if (!env.DISPATCHER) return response(503, "state storage is not configured");

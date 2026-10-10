@@ -20,7 +20,7 @@ In **Settings → Secrets and variables → Actions** configura:
 - `OPENAI_API_KEY`: chiave API usata per estrazione e traduzione.
 - `GOOGLE_DRIVE_IMPERSONATED_USER`: opzionale, solo per delega Workspace in My Drive.
 - `CLOUDFLARE_API_TOKEN`: token Cloudflare con permesso **Workers Edit**, limitato all'account usato per il Worker.
-- `DRIVE_DISPATCH_TOKEN`: token fine-grained limitato a questa repository con il solo permesso **Actions: write**; il Worker lo usa per avviare la sincronizzazione e proteggere l'API dello stato Drive.
+- `DRIVE_DISPATCH_TOKEN`: token fine-grained limitato a questa repository con il solo permesso **Actions: write**; il Worker lo usa esclusivamente per avviare la sincronizzazione quando riceve una notifica Drive.
 - `DRIVE_WEBHOOK_TOKEN`: valore casuale di almeno 32 byte, condiviso solo tra il canale Drive e il Worker; viene caricato sul Worker dal workflow di deploy.
 
 **Variables**
@@ -41,11 +41,13 @@ Per attivarlo una volta sola:
 1. In GitHub aggiungi i secret Cloudflare/GitHub elencati sopra e la variabile `CLOUDFLARE_ACCOUNT_ID`.
 2. Crea `DRIVE_WEBHOOK_TOKEN` localmente (per esempio con `python -c "import secrets; print(secrets.token_urlsafe(48))"`) e inseriscilo direttamente come secret GitHub. Non inviarlo in chat né inserirlo nei file del repository.
 3. Avvia **Actions → Deploy Drive webhook → Run workflow** su `main`. Il workflow installa i due secret nel Worker e verifica il suo endpoint. Imposta una volta la variabile `DRIVE_WEBHOOK_URL` all'URL stabile indicato sopra; i deploy successivi non richiedono altre modifiche.
-4. Al successivo controllo automatico (entro 5 minuti) il workflow registra il canale Google Drive e salva lo stato nel Durable Object Cloudflare, protetto da `DRIVE_WEBHOOK_TOKEN`. Da quel momento gli upload e le rimozioni generano l'avvio automatico; il polling rimane attivo come rete di sicurezza.
+4. Al successivo controllo automatico (entro 5 minuti) un job separato e limitato registra il canale Google Drive e salva lo stato nel Durable Object Cloudflare. Il job si autentica con un token OIDC GitHub a breve durata, verificato dal Worker per repository, branch e workflow; non serve un secret condiviso per l'API di stato. Da quel momento gli upload e le rimozioni generano l'avvio automatico; il polling rimane attivo come rete di sicurezza.
+
+Per un test end-to-end manuale, avvia **Deploy Drive webhook** con `smoke_test_dispatch=true`: invia una notifica sintetica al Worker e verifica che GitHub avvii il workflow di sincronizzazione. L'opzione è disattivata per i deploy normali; il workflow di sync conserva il comportamento di pubblicazione automatica previsto.
 
 Google fa scadere i canali `changes` entro sette giorni: il workflow li rinnova un giorno prima della scadenza, senza richiedere interventi periodici. Il report di ogni sincronizzazione indica lo stato del canale. Se mancano i secret, il deploy automatico viene saltato in modo visibile e il polling continua.
 
-Il token fine-grained GitHub può avere una data di scadenza: prima che scada, rinnovalo e aggiorna il secret GitHub `DRIVE_DISPATCH_TOKEN`, poi avvia il deploy del Worker per aggiornare il binding interno `GITHUB_DISPATCH_TOKEN`.
+Il token fine-grained GitHub può avere una data di scadenza: prima che scada, rinnovalo e aggiorna il secret GitHub `DRIVE_DISPATCH_TOKEN`, poi avvia il deploy del Worker per aggiornare il binding interno `GITHUB_DISPATCH_TOKEN`. Il token OIDC usato per lo stato viene emesso da GitHub per il singolo job e non va aggiunto ai Secrets.
 
 ## Pubblicazione e anteprima
 

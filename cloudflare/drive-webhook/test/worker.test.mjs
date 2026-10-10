@@ -6,6 +6,45 @@ import { runDurableObjectAlarm, runInDurableObject } from "cloudflare:test";
 import worker from "../src/index.mjs";
 
 const network = setupNetwork();
+const OIDC_ISSUER = "https://token.actions.githubusercontent.com";
+const OIDC_AUDIENCE = "https://technical-sheets.houseoftartufo.com/drive-watch";
+const OIDC_JWKS_URL = `${OIDC_ISSUER}/.well-known/jwks`;
+const encoder = new TextEncoder();
+let oidcKeyPair;
+let oidcPublicJwk;
+
+function base64Url(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+async function signedOidcToken(claims = {}) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64Url(encoder.encode(JSON.stringify({ alg: "RS256", kid: "github-test-key", typ: "JWT" })));
+  const payload = base64Url(encoder.encode(JSON.stringify({
+    iss: OIDC_ISSUER,
+    aud: OIDC_AUDIENCE,
+    sub: "repo:Houseoftartufo/technical-sheets:ref:refs/heads/main",
+    repository: "Houseoftartufo/technical-sheets",
+    repository_id: "1261335289",
+    repository_owner_id: "275527893",
+    ref: "refs/heads/main",
+    workflow_ref: "Houseoftartufo/technical-sheets/.github/workflows/sync-drive.yml@refs/heads/main",
+    event_name: "schedule",
+    iat: now,
+    nbf: now - 1,
+    exp: now + 300,
+    ...claims,
+  })));
+  const signingInput = `${header}.${payload}`;
+  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", oidcKeyPair.privateKey, encoder.encode(signingInput));
+  return `${signingInput}.${base64Url(new Uint8Array(signature))}`;
+}
+
+function mockGithubOidcKeys() {
+  network.use(http.get(OIDC_JWKS_URL, () => HttpResponse.json({ keys: [oidcPublicJwk] })));
+}
 
 function notification(state = "update", token = "fixture-drive-token") {
   return new Request("https://worker.example/drive", {
@@ -19,7 +58,18 @@ async function invoke(request) {
 }
 
 describe("Drive webhook on the Cloudflare Workers runtime", () => {
-  beforeAll(() => network.enable());
+  beforeAll(async () => {
+    network.enable();
+    oidcKeyPair = await crypto.subtle.generateKey(
+      { name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
+      true,
+      ["sign", "verify"],
+    );
+    oidcPublicJwk = await crypto.subtle.exportKey("jwk", oidcKeyPair.publicKey);
+    oidcPublicJwk.kid = "github-test-key";
+    oidcPublicJwk.alg = "RS256";
+    oidcPublicJwk.use = "sig";
+  });
   afterEach(() => network.resetHandlers());
   afterAll(() => network.disable());
 
@@ -29,11 +79,13 @@ describe("Drive webhook on the Cloudflare Workers runtime", () => {
     expect(await result.text()).toBe("ok");
   });
 
-  it("protects persistent Drive watch state with the webhook secret", async () => {
+  it("protects persistent Drive watch state with a signed token from the expected GitHub workflow", async () => {
     const denied = await invoke(new Request("https://worker.example/watch-state"));
     expect(denied.status).toBe(403);
 
-    const headers = { "X-Drive-Watch-Secret": "fixture-github-token" };
+    mockGithubOidcKeys();
+    const token = await signedOidcToken();
+    const headers = { Authorization: `Bearer ${token}` };
     const saved = { id: "channel-1", resource_id: "resource-1", drive_id: "drive-1", expiration_ms: "1900000000000" };
     const put = await invoke(new Request("https://worker.example/watch-state", {
       method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify(saved),
@@ -43,6 +95,32 @@ describe("Drive webhook on the Cloudflare Workers runtime", () => {
     const get = await invoke(new Request("https://worker.example/watch-state", { headers }));
     expect(get.status).toBe(200);
     expect(await get.json()).toEqual(saved);
+  });
+
+  it("rejects a correctly signed GitHub token from another repository", async () => {
+    mockGithubOidcKeys();
+    const token = await signedOidcToken({ repository: "someone-else/technical-sheets" });
+    const result = await invoke(new Request("https://worker.example/watch-state", {
+      headers: { Authorization: `Bearer ${token}` },
+    }));
+    expect(result.status).toBe(403);
+  });
+
+  it("rejects tokens with the wrong audience or an invalid signature", async () => {
+    mockGithubOidcKeys();
+    const wrongAudience = await signedOidcToken({ aud: "https://example.invalid" });
+    const wrongAudienceResponse = await invoke(new Request("https://worker.example/watch-state", {
+      headers: { Authorization: `Bearer ${wrongAudience}` },
+    }));
+    expect(wrongAudienceResponse.status).toBe(403);
+
+    const valid = await signedOidcToken();
+    const [header, payload, signature] = valid.split(".");
+    const corruptedSignature = `${signature[0] === "A" ? "B" : "A"}${signature.slice(1)}`;
+    const invalidSignatureResponse = await invoke(new Request("https://worker.example/watch-state", {
+      headers: { Authorization: `Bearer ${header}.${payload}.${corruptedSignature}` },
+    }));
+    expect(invalidSignatureResponse.status).toBe(403);
   });
 
   it("rejects an invalid Google channel token and does not queue work", async () => {
