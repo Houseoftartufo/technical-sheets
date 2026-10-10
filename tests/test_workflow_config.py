@@ -51,6 +51,7 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("DRIVE_WEBHOOK_URL", deploy)
         self.assertIn("/health", deploy)
         self.assertIn('"User-Agent":"technical-sheets-health-check"', deploy)
+        self.assertIn("variables: write", deploy)
         self.assertNotIn("pull-requests: write", deploy)
 
     def test_does_not_depend_on_vercel_cli_or_vercel_secrets(self):
