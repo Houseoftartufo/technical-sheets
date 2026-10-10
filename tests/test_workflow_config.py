@@ -20,11 +20,11 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("branches: [main]", self.workflow)
         self.assertIn('cron: "*/15 * * * *"', self.workflow)
 
-    def test_has_only_scoped_permissions_needed_for_catalog_prs(self):
+    def test_has_only_scoped_permissions_needed_for_preview_and_catalog_push(self):
         self.assertIn("contents: write", self.workflow)
-        self.assertIn("pull-requests: write", self.workflow)
-        self.assertIn("checks: read", self.workflow)
+        self.assertIn("deployments: read", self.workflow)
         self.assertIn("statuses: read", self.workflow)
+        self.assertNotIn("pull-requests:", self.workflow)
         self.assertNotIn("contents: read\n", self.workflow)
 
     def test_does_not_depend_on_vercel_cli_or_vercel_secrets(self):
@@ -45,9 +45,9 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertNotIn("--force", self.workflow)
 
     def test_preview_and_production_checks_precede_drive_finalization(self):
-        preview = self.workflow.index("Wait for Vercel Git preview checks")
+        preview = self.workflow.index("Wait for Vercel Git preview deployment")
         smoke = self.workflow.index("Validate catalog bundle for the ready Vercel preview")
-        production = self.workflow.index("Merge validated catalog PR to main")
+        production = self.workflow.index("Promote validated catalog commit to main")
         verify = self.workflow.index("Verify official production catalog")
         finalize = self.workflow.index("Finalize Drive state")
         self.assertLess(preview, smoke)
@@ -60,12 +60,12 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertNotIn("git add .", self.workflow)
         self.assertIn("if: always()", self.workflow)
         self.assertIn("drive_sync_report.json", self.workflow)
-        self.assertIn("pull_request_url", self.workflow)
+        self.assertIn("preview_branch_url", self.workflow)
         self.assertIn("preview_deployment_url", self.workflow)
         self.assertIn("production_deployment_url", self.workflow)
 
     def test_manual_dispatch_defaults_to_preview_and_only_main_can_publish(self):
-        production = self.workflow.split("- name: Merge validated catalog PR to main", 1)[1].split("- name: Verify official production catalog", 1)[0]
+        production = self.workflow.split("- name: Promote validated catalog commit to main", 1)[1].split("- name: Verify official production catalog", 1)[0]
         self.assertIn("github.ref == 'refs/heads/main'", production)
         self.assertIn("github.event_name != 'workflow_dispatch'", production)
         self.assertIn("github.event.inputs.publish_to_production == 'true'", production)
