@@ -42,6 +42,10 @@ class DriveWatchTests(unittest.TestCase):
         put_request = urlopen.call_args_list[1].args[0]
         self.assertEqual(get_request.full_url, "https://worker.example/watch-state")
         self.assertEqual(get_request.get_header("Authorization"), "Bearer state-secret-token")
+        self.assertEqual(
+            get_request.get_header("User-agent"),
+            "technical-sheets-drive-sync/1.0 (+https://github.com/Houseoftartufo/technical-sheets)",
+        )
         self.assertEqual(put_request.get_method(), "PUT")
         self.assertEqual(json.loads(put_request.data), {"id": "channel-2"})
 
