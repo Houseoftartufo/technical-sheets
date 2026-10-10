@@ -44,7 +44,9 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("workflow_dispatch:", deploy)
         self.assertIn("cloudflare/wrangler-action@v4", deploy)
         self.assertIn("CLOUDFLARE_API_TOKEN", deploy)
-        self.assertIn("GITHUB_DISPATCH_TOKEN", deploy)
+        self.assertIn("DRIVE_DISPATCH_TOKEN", deploy)
+        self.assertIn("GITHUB_DISPATCH_TOKEN: ${{ secrets.DRIVE_DISPATCH_TOKEN }}", deploy)
+        self.assertNotIn("secrets.GITHUB_DISPATCH_TOKEN", deploy)
         self.assertIn("DRIVE_WEBHOOK_TOKEN", deploy)
         self.assertIn("DRIVE_WEBHOOK_URL", deploy)
         self.assertIn("/health", deploy)
@@ -104,7 +106,7 @@ class WorkflowConfigTests(unittest.TestCase):
 
     def test_readme_documents_cloudflare_drive_push_setup(self):
         self.assertIn("CLOUDFLARE_API_TOKEN", self.readme)
-        self.assertIn("GITHUB_DISPATCH_TOKEN", self.readme)
+        self.assertIn("DRIVE_DISPATCH_TOKEN", self.readme)
         self.assertIn("DRIVE_WEBHOOK_TOKEN", self.readme)
         self.assertIn("Durable Object", self.readme)
 
