@@ -33,22 +33,18 @@ def canonicalize_product(product, source_name):
 def resolve_output_folder(product, existing_folders, imported_products, reserved_folders=()):
     """Choose a safe destination or block if two supplier files collide."""
     original = product["folder"]
-    folder = original
     if original in existing_folders or original in reserved_folders:
-        folder = "DUPLICATE_%s" % original
-    if folder in imported_products or folder in reserved_folders:
+        return None, f"Product folder collision for '{original}'; classify the supplier sheet before publishing."
+    if original in imported_products:
         return None, (
             "Multiple supplier files resolve to the same product folder "
-            f"'{folder}'; rename or classify the supplier sheet before publishing."
+            f"'{original}'; rename or classify the supplier sheet before publishing."
         )
-    if folder != original:
-        product["duplicate_of"] = original
-        product["folder"] = folder
-    return folder, None
+    return original, None
 
 
-def source_fingerprint(item):
-    """Stable digest for source content and extraction-relevant metadata."""
+def legacy_source_fingerprint(item):
+    """Fingerprint used by manifests created before content-only identity."""
     source = {
         "md5Checksum": item.get("md5Checksum"),
         "modifiedTime": item.get("modifiedTime"),
@@ -59,8 +55,39 @@ def source_fingerprint(item):
     return hashlib.sha256(json.dumps(source, sort_keys=True).encode("utf-8")).hexdigest()
 
 
-def product_manifest_entry(item, folder):
-    return {"fingerprint": source_fingerprint(item), "folder": folder, "name": item.get("name", "")}
+def source_fingerprint(item):
+    """Hash source bytes and format; Drive renames do not count as content changes."""
+    checksum = item.get("md5Checksum") or item.get("sha256Checksum")
+    if not checksum:
+        raise ValueError(f"Drive did not provide a content checksum for {item.get('name', item.get('id', 'source'))}")
+    source = {
+        "checksum": checksum,
+        "mimeType": item.get("mimeType", ""),
+        "size": item.get("size"),
+    }
+    return hashlib.sha256(json.dumps(source, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def canonical_managed_name(folder, original_name):
+    """Return a stable, sortable Drive name while preserving the supplier basename."""
+    from pathlib import PurePosixPath
+    basename = PurePosixPath(str(original_name).replace("\\", "/")).name
+    if not folder or not basename or basename in {".", ".."}:
+        raise ValueError("Cannot create a canonical name from an empty product folder or source filename")
+    return f"{folder}__{basename}"
+
+
+def product_manifest_entry(item, folder, title):
+    languages = ("ITA", "FR", "ENG", "NL", "DE")
+    original_name = item.get("original_name") or item.get("name", "")
+    return {
+        "fingerprint": source_fingerprint(item),
+        "folder": folder,
+        "name": original_name,
+        "original_name": original_name,
+        "managed_name": canonical_managed_name(folder, original_name),
+        "title": {language: title.get(language, "") for language in languages},
+    }
 
 
 def unchanged_source_ids(sources, manifest):
@@ -95,13 +122,65 @@ def removed_product_folders(previous, current_source_ids, updated_entries=None):
     return sorted(stale - retained)
 
 
+def reconcile_sources(pending_sources, active_sources, manifest):
+    """Reconcile the intake queue and active originals without treating a move as deletion."""
+    pending = {item["id"]: item for item in pending_sources}
+    active = {item["id"]: item for item in active_sources}
+    overlapping = set(pending) & set(active)
+    if overlapping:
+        raise ValueError("Drive source IDs appear in both intake and processed folders: "
+                         + ", ".join(sorted(overlapping)))
+
+    previous = manifest.get("products", {}) if isinstance(manifest, dict) else {}
+    current_ids = set(pending) | set(active)
+    changed_pending, changed_active, unchanged = [], [], []
+    next_products = {source_id: previous[source_id] for source_id in sorted(current_ids)
+                     if source_id in previous}
+    for source_id in sorted(current_ids):
+        item = pending.get(source_id) or active[source_id]
+        entry = previous.get(source_id, {})
+        current_fingerprint = source_fingerprint(item)
+        if entry.get("fingerprint") in {current_fingerprint, legacy_source_fingerprint(item)}:
+            unchanged.append(source_id)
+            if entry.get("fingerprint") != current_fingerprint:
+                upgraded = dict(entry)
+                original_name = entry.get("original_name") or entry.get("name") or item.get("name", "")
+                upgraded.update({
+                    "fingerprint": current_fingerprint,
+                    "original_name": original_name,
+                    "managed_name": entry.get("managed_name") or canonical_managed_name(entry.get("folder", ""), original_name),
+                    "name": original_name,
+                })
+                next_products[source_id] = upgraded
+        elif source_id in pending:
+            changed_pending.append(item)
+        else:
+            changed_active.append(item)
+
+    removed_source_ids = sorted(set(previous) - current_ids)
+    removed_folders = removed_product_folders(manifest, current_ids)
+    return {
+        "changed_pending": changed_pending,
+        "changed_active": changed_active,
+        "unchanged": unchanged,
+        "removed_source_ids": removed_source_ids,
+        "removed_folders": removed_folders,
+        "next_products": next_products,
+    }
+
+
 def load_manifest(path):
     if not path.exists():
-        return {"version": 1, "products": {}, "legacy_folders": []}
+        return {"version": 2, "products": {}, "legacy_folders": []}
     value = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(value, list):
-        return {"version": 1, "products": {}, "legacy_folders": sorted(set(value))}
+        return {"version": 2, "products": {}, "legacy_folders": sorted(set(value))}
     if not isinstance(value, dict) or not isinstance(value.get("products", {}), dict):
         raise ValueError("drive_manifest.json has an unsupported format")
-    return {"version": 1, "products": value.get("products", {}),
-            "legacy_folders": value.get("legacy_folders", [])}
+    if value.get("version", 1) not in (1, 2):
+        raise ValueError("drive_manifest.json has an unsupported version")
+    manifest = {"version": 2, "products": value.get("products", {}),
+                "legacy_folders": value.get("legacy_folders", [])}
+    if value.get("source_catalog_version") is not None:
+        manifest["source_catalog_version"] = value["source_catalog_version"]
+    return manifest
