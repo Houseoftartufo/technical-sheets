@@ -1,17 +1,16 @@
-"""Publish generated product folders to the official Google Drive catalog."""
+"""Publish generated product folders and finalize the authoritative Drive manifest."""
 import json
 import mimetypes
 import os
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 GENERATED_ROOT = Path(os.environ.get("DRIVE_GENERATED_DIR", ROOT))
 CATALOG_ID = os.environ.get("DRIVE_CATALOG_FOLDER_ID") or "1vEyctBT3z9F5-hFM-DeTWEsjaY2I8drb"
 SCOPES = ["https://www.googleapis.com/auth/drive"]
-EMPTY_FOLDER_ALIASES = {
-    "28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO": ("CARPACCIO_DI_TARTUFO_ESTIVO",),
-}
+MANIFEST_NAME = ".technical-sheets-manifest.json"
+FOLDER_MIME = "application/vnd.google-apps.folder"
+EMPTY_FOLDER_ALIASES = {"28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO": ("CARPACCIO_DI_TARTUFO_ESTIVO",)}
 
 
 def drive_client():
@@ -37,30 +36,31 @@ def child_items(drive, parent_id, name, mime_type=None):
     if mime_type:
         clauses.append(f"mimeType = '{mime_type}'")
     return drive.files().list(
-        q=" and ".join(clauses), pageSize=100, fields="files(id,name,mimeType)",
+        q=" and ".join(clauses), pageSize=100, fields="files(id,name,mimeType,parents,md5Checksum,size)",
         supportsAllDrives=True, includeItemsFromAllDrives=True,
     ).execute().get("files", [])
 
 
-def ensure_product_folder(drive, folder):
-    folders = child_items(drive, CATALOG_ID, folder, "application/vnd.google-apps.folder")
+def ensure_product_folder(drive, folder, catalog_id=None):
+    catalog_id = catalog_id or CATALOG_ID
+    folders = child_items(drive, catalog_id, folder, FOLDER_MIME)
+    if len(folders) > 1:
+        raise RuntimeError(f"Multiple Drive folders named {folder}; refusing ambiguous update")
     if folders:
         return folders[0]["id"]
     for alias in EMPTY_FOLDER_ALIASES.get(folder, ()):
-        candidates = child_items(drive, CATALOG_ID, alias, "application/vnd.google-apps.folder")
+        candidates = child_items(drive, catalog_id, alias, FOLDER_MIME)
         for candidate in candidates:
             children = drive.files().list(
                 q=f"'{candidate['id']}' in parents and trashed = false", pageSize=1,
                 fields="files(id)", supportsAllDrives=True, includeItemsFromAllDrives=True,
             ).execute().get("files", [])
             if not children:
-                drive.files().update(
-                    fileId=candidate["id"], body={"name": folder}, fields="id",
-                    supportsAllDrives=True,
-                ).execute()
+                drive.files().update(fileId=candidate["id"], body={"name": folder},
+                                     fields="id", supportsAllDrives=True).execute()
                 return candidate["id"]
     return drive.files().create(
-        body={"name": folder, "mimeType": "application/vnd.google-apps.folder", "parents": [CATALOG_ID]},
+        body={"name": folder, "mimeType": FOLDER_MIME, "parents": [catalog_id]},
         fields="id", supportsAllDrives=True,
     ).execute()["id"]
 
@@ -68,47 +68,182 @@ def ensure_product_folder(drive, folder):
 def upsert_file(drive, parent_id, path):
     from googleapiclient.http import MediaFileUpload
 
-    query = f"'{parent_id}' in parents and trashed = false and name = '{escaped(path.name)}'"
-    matches = drive.files().list(q=query, pageSize=10, fields="files(id)", supportsAllDrives=True,
-                                 includeItemsFromAllDrives=True).execute().get("files", [])
+    matches = child_items(drive, parent_id, path.name)
+    if len(matches) > 1:
+        raise RuntimeError(f"Multiple Drive files named {path.name} in output folder")
     media = MediaFileUpload(str(path), mimetype=mimetypes.guess_type(path.name)[0] or "application/octet-stream")
     if matches:
         drive.files().update(fileId=matches[0]["id"], media_body=media, supportsAllDrives=True).execute()
-    else:
-        drive.files().create(body={"name": path.name, "parents": [parent_id]}, media_body=media,
-                             fields="id", supportsAllDrives=True).execute()
+        return matches[0]["id"]
+    return drive.files().create(body={"name": path.name, "parents": [parent_id]}, media_body=media,
+                                fields="id", supportsAllDrives=True).execute()["id"]
 
 
-def trash_product_folder(drive, folder):
-    for item in child_items(drive, CATALOG_ID, folder, "application/vnd.google-apps.folder"):
-        drive.files().update(fileId=item["id"], body={"trashed": True}, supportsAllDrives=True).execute()
+def _trash_owned_folders(drive, catalog_id, folders):
+    trashed = []
+    for folder in sorted(set(folders)):
+        matches = child_items(drive, catalog_id, folder, FOLDER_MIME)
+        if len(matches) > 1:
+            raise RuntimeError(f"Multiple Drive folders named {folder}; refusing ambiguous removal")
+        if matches:
+            drive.files().update(fileId=matches[0]["id"], body={"trashed": True},
+                                 supportsAllDrives=True).execute()
+            trashed.append(folder)
+    return trashed
 
 
-def main():
-    drive = drive_client()
-    overrides_path = ROOT / "_BUILD" / "product_overrides.json"
-    removed_path = ROOT / "_BUILD" / "removed_products.json"
-    products = json.loads(overrides_path.read_text(encoding="utf-8")) if overrides_path.exists() else {}
-    removed = json.loads(removed_path.read_text(encoding="utf-8")) if removed_path.exists() else []
+def _manifest_items(drive, catalog_id, manifest_file_id):
+    if manifest_file_id:
+        return [{"id": manifest_file_id, "name": MANIFEST_NAME}]
+    return child_items(drive, catalog_id, MANIFEST_NAME)
+
+
+def download_drive_file(drive, item):
+    from googleapiclient.http import MediaIoBaseDownload
+    from io import BytesIO
+
+    request = drive.files().get_media(fileId=item["id"], supportsAllDrives=True)
+    if isinstance(request, (bytes, bytearray)):
+        return bytes(request)
+    buffer = BytesIO()
+    downloader = MediaIoBaseDownload(buffer, request)
+    done = False
+    while not done:
+        _, done = downloader.next_chunk()
+    return buffer.getvalue()
+
+
+def _upsert_manifest(drive, catalog_id, payload, existing_id):
+    from googleapiclient.http import MediaInMemoryUpload
+
+    data = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
+    media = MediaInMemoryUpload(data, mimetype="application/json", resumable=False)
+    if existing_id:
+        drive.files().update(fileId=existing_id, media_body=media, supportsAllDrives=True).execute()
+        return existing_id
+    return drive.files().create(
+        body={"name": MANIFEST_NAME, "mimeType": "application/json", "parents": [catalog_id]},
+        media_body=media, fields="id", supportsAllDrives=True,
+    ).execute()["id"]
+
+
+def _validate_plan(plan):
+    if plan.get("status") != "ready":
+        raise RuntimeError("Refusing to publish a blocked Drive sync plan")
+    manifest = plan.get("next_manifest")
+    if not isinstance(manifest, dict) or manifest.get("version") != 2 or not isinstance(manifest.get("products"), dict):
+        raise ValueError("Drive sync plan has no valid v2 manifest")
+    if plan.get("move_source_ids") and not plan.get("source_folder_id"):
+        raise ValueError("Drive sync plan is missing its intake folder ID")
+    if not isinstance(plan.get("rename_sources", []), list):
+        raise ValueError("Drive sync plan has invalid source rename operations")
+
+
+def _validate_source_renames(drive, plan, processed_id):
+    operations = plan.get("rename_sources", [])
+    target_names = [operation.get("to_name") for operation in operations]
+    if any(not name for name in target_names) or len(target_names) != len(set(target_names)):
+        raise RuntimeError("Source rename plan contains an empty or duplicate managed filename")
+    source_ids = set()
+    validated = []
+    for operation in operations:
+        source_id = operation.get("id")
+        original = operation.get("from_name")
+        target = operation.get("to_name")
+        if not source_id or not original or source_id in source_ids:
+            raise RuntimeError("Source rename plan contains an invalid or duplicate source ID")
+        source_ids.add(source_id)
+        item = drive.files().get(fileId=source_id, fields="id,name,parents", supportsAllDrives=True).execute()
+        if item.get("name") not in {original, target}:
+            raise RuntimeError(f"Source {source_id} changed after planning; refusing to rename it")
+        parents = item.get("parents", [])
+        expected_parent = plan.get("source_folder_id") if source_id in set(plan.get("move_source_ids", [])) else processed_id
+        if expected_parent not in parents and not (item.get("name") == target and processed_id in parents):
+            raise RuntimeError(f"Source {source_id} is no longer in its expected managed folder")
+        collisions = child_items(drive, processed_id, target)
+        if any(match["id"] != source_id for match in collisions):
+            raise RuntimeError(f"Drive source filename collision in ELABORATE: {target}")
+        validated.append((source_id, original, target))
+    return validated
+
+
+def apply(drive, plan, generated_root, catalog_id, processed_id, manifest_file_id=None):
+    """Idempotently publish changed outputs, remove owned folders, move sources, then commit manifest."""
+    _validate_plan(plan)
+    generated_root = Path(generated_root)
+    next_manifest = plan["next_manifest"]
+    products = next_manifest["products"]
+    active_folders = {entry.get("folder") for entry in products.values() if entry.get("folder")}
+    active_folders.update(plan.get("imported", {}).keys())
+
+    existing_manifest_items = _manifest_items(drive, catalog_id, manifest_file_id)
+    if len(existing_manifest_items) > 1:
+        raise RuntimeError("Multiple Drive sync manifests found; refusing to choose one")
+    existing_manifest_id = existing_manifest_items[0]["id"] if existing_manifest_items else None
+    previous_manifest = json.loads(download_drive_file(drive, existing_manifest_items[0])) if existing_manifest_items else {"version": 2, "products": {}, "legacy_folders": []}
+    previous_products = previous_manifest.get("products", {})
+    owned_folders = {entry.get("folder") for entry in previous_products.values() if entry.get("folder")}
+    removed_candidates = set(plan.get("removed_folders", []))
+    next_owned = {entry.get("folder") for entry in products.values() if entry.get("folder")}
+    next_owned.update(plan.get("imported", {}).keys())
+    safe_removed = (removed_candidates & owned_folders) - next_owned
+    if safe_removed != removed_candidates - next_owned:
+        unsafe = sorted((removed_candidates - next_owned) - owned_folders)
+        if unsafe:
+            raise RuntimeError("Removal requested for folders not owned by the sync manifest: " + ", ".join(unsafe))
+    rename_operations = _validate_source_renames(drive, plan, processed_id)
+
     published = []
-    for folder in sorted(products):
-        product_dir = GENERATED_ROOT / folder
+    for folder in sorted(plan.get("imported", {})):
+        if folder not in active_folders:
+            raise RuntimeError(f"Changed product is absent from active manifest: {folder}")
+        product_dir = generated_root / folder
         if not product_dir.is_dir():
             raise RuntimeError(f"Generated product folder is missing: {folder}")
-        drive_folder = ensure_product_folder(drive, folder)
         files = sorted(product_dir.glob(f"{folder}_*.html")) + sorted(product_dir.glob(f"{folder}_*.pdf"))
         if not files:
             raise RuntimeError(f"No generated HTML/PDF files found for {folder}")
-        for path in files:
-            upsert_file(drive, drive_folder, path)
-        published.append({"folder": folder, "files": [path.name for path in files]})
-    for folder in removed:
-        trash_product_folder(drive, folder)
-    report_path = ROOT / "_BUILD" / "drive_sync_report.json"
-    report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.exists() else {}
-    report.update({"published_to_drive": published, "trashed_from_drive": sorted(removed)})
-    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Drive catalog published: {len(published)} product folders; trashed: {len(removed)}")
+        destination_id = ensure_product_folder(drive, folder, catalog_id)
+        output_ids = [upsert_file(drive, destination_id, path) for path in files]
+        published.append({"folder": folder, "files": [path.name for path in files], "drive_ids": output_ids})
+
+    trashed = _trash_owned_folders(drive, catalog_id, safe_removed)
+
+    moved = []
+    source_folder_id = plan.get("source_folder_id")
+    for source_id in sorted(set(plan.get("move_source_ids", []))):
+        found = drive.files().get(fileId=source_id, fields="id,parents", supportsAllDrives=True).execute()
+        parents = found.get("parents", [])
+        if processed_id in parents:
+            continue
+        if source_folder_id not in parents:
+            raise RuntimeError(f"Intake source {source_id} is no longer in the expected folder")
+        drive.files().update(fileId=source_id, addParents=processed_id, removeParents=source_folder_id,
+                             fields="id,parents", supportsAllDrives=True).execute()
+        moved.append(source_id)
+
+    renamed = []
+    for source_id, original, target in rename_operations:
+        item = drive.files().get(fileId=source_id, fields="id,name,parents", supportsAllDrives=True).execute()
+        if item.get("name") == target:
+            continue
+        if item.get("name") != original or processed_id not in item.get("parents", []):
+            raise RuntimeError(f"Source {source_id} changed during finalize; refusing to overwrite its name")
+        drive.files().update(fileId=source_id, body={"name": target}, fields="id,name", supportsAllDrives=True).execute()
+        renamed.append({"id": source_id, "name": target})
+
+    if existing_manifest_id and previous_manifest == next_manifest:
+        saved_manifest_id = existing_manifest_id
+    else:
+        saved_manifest_id = _upsert_manifest(drive, catalog_id, next_manifest, existing_manifest_id)
+    return {"published_to_drive": published, "trashed": trashed, "moved_source_ids": moved,
+            "renamed_sources": renamed, "manifest_file_id": saved_manifest_id,
+            "active_product_folders": sorted(active_folders)}
+
+
+def main():
+    """Legacy CLI remains for manual debugging; orchestration calls apply after deploy."""
+    raise SystemExit("Use the sync-drive workflow, which finalizes Drive after a verified Vercel deploy.")
 
 
 if __name__ == "__main__":

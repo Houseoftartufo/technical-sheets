@@ -25,6 +25,8 @@ LOCALIZED_PATHS = (
     ("characteristics", "chemical"),
     ("characteristics", "micro"),
 )
+OPTIONAL_LOCALIZED_PATHS = (("characteristics", "chemical"), ("characteristics", "micro"))
+REQUIRED_LOCALIZED_PATHS = tuple(path for path in LOCALIZED_PATHS if path not in OPTIONAL_LOCALIZED_PATHS)
 
 
 def _get(mapping, path):
@@ -43,11 +45,20 @@ def _set(mapping, path, value):
 
 def add_german(product):
     product = deepcopy(product)
-    if all(
+    required_complete = all(
         isinstance(_get(product, path), dict)
         and all(language in _get(product, path) for language in LANGS)
-        for path in LOCALIZED_PATHS
-    ):
+        for path in REQUIRED_LOCALIZED_PATHS
+    )
+    optional_complete = all(
+        not _has_path(product, path)
+        or (
+            isinstance(_get(product, path), dict)
+            and all(language in _get(product, path) for language in LANGS)
+        )
+        for path in OPTIONAL_LOCALIZED_PATHS
+    )
+    if required_complete and optional_complete:
         return product
 
     folder = product["folder"]
@@ -56,7 +67,12 @@ def add_german(product):
     translation = DE_TRANSLATIONS[folder]
 
     for path in LOCALIZED_PATHS:
-        current = _get(product, path)
+        try:
+            current = _get(product, path)
+        except (KeyError, TypeError):
+            if path in OPTIONAL_LOCALIZED_PATHS:
+                continue
+            raise
         german = _get(translation, path)
         if isinstance(current, dict):
             current["DE"] = german
@@ -65,6 +81,14 @@ def add_german(product):
             localized["DE"] = german
             _set(product, path, localized)
     return product
+
+
+def _has_path(mapping, path):
+    try:
+        _get(mapping, path)
+        return True
+    except (KeyError, TypeError):
+        return False
 
 
 def load_products_file(path):

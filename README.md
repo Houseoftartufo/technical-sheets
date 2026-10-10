@@ -1,41 +1,48 @@
 # House of Tartufo - Schede Tecniche Prodotti
 
-Schede tecniche professionali multilingue (ITA / FR / ENG / NL / DE) per 27 prodotti,
-ricostruite dai testi originali italiani Sassone con traduzioni B2B e dati verbatim.
+Catalogo multilingue House of Tartufo, con schede generate dal motore ufficiale `_BUILD/engine.py` e indice creato da `_BUILD/build_index.py`.
 
-## Contenuto
-- 27 cartelle prodotto, ciascuna con 5 PDF + 5 HTML (ITA, FR, ENG, NL, DE) = 135 schede per formato.
-- index.html - indice navigabile con link a tutte le lingue.
-- _BUILD/ - motore di generazione (engine.py), dati (blockA-E.json, p01/p02),
-  riferimento valori nutrizionali e MAPPATURA.md (regole + correzioni applicate).
+## Caricamento nuove schede fornitori
 
-## Deploy su Vercel
-- Framework Preset: Other
-- Build Command: lasciare vuoto
-- Output Directory: lasciare vuoto o `.`
-- Install Command: lasciare vuoto
+1. Aggiungi il PDF, DOC o DOCX originale del fornitore direttamente nella cartella Drive **ELABORATE**. Questa è la lista autorevole dei prodotti pubblicati.
+2. GitHub Actions controlla la cartella ogni 15 minuti. Puoi anche avviare **Run workflow**: la preview è la modalità predefinita e solo da `main` puoi scegliere esplicitamente la pubblicazione ufficiale.
+3. Il job estrae e valida i dati, crea le cinque lingue e genera HTML/PDF con `_BUILD/engine.py` e lo stesso layout del catalogo. Le informazioni mancanti non vengono inventate.
+4. Dopo preview e controlli, il workflow pubblica il bundle completo. Solo dopo il deploy ufficiale riuscito rinomina il documento in `CODICE_PRODOTTO__nome-originale.pdf` (o mantiene l'estensione Word), così resta ordinato in **ELABORATE**. Preview e run falliti non modificano Drive.
 
-## Note
-- Nuovo logo House of Tartufo in PNG trasparente, senza riquadro o sfondo; colori e struttura delle schede invariati.
-- Valori nutrizionali trascritti verbatim dalle schede originali (ogni decimale).
-- Correzioni allergeni/titoli vs originale: vedi _BUILD/MAPPATURA.md.
-- Codice EAN: placeholder originale Sassone (80582 6513), da sostituire con EAN reali.
+Per aggiornare un prodotto, sostituisci il suo originale in **ELABORATE** mantenendo il file. Per rimuoverlo, elimina l'originale da **ELABORATE**: dopo un deploy riuscito la scheda sparisce da indice e sito, e la cartella di output gestita viene spostata nel cestino Drive. I 27 output ufficiali iniziali restano byte per byte invariati al bootstrap. I documenti incompleti, ambigui, non mappati o duplicati bloccano/si segnalano senza pubblicare una scheda incompleta. Il report del job è disponibile come artifact GitHub Actions.
 
-## Rigenerazione
-- Un dataset, tutte le lingue: `python _BUILD/engine.py _BUILD/p01.json . 06/06/2026`
-- Un dataset, solo tedesco: `python _BUILD/engine.py _BUILD/p01.json . 06/06/2026 DE`
-- Per rigenerare l'intero catalogo, ripetere il comando per `p02.json` e `blockA.json`-`blockE.json`.
-- Indice: `python _BUILD/build_index.py`
-- I PDF sono generati con WeasyPrint; in assenza delle librerie native viene usato Chrome/Edge in modalità headless.
+## Configurazione GitHub
 
-## Schede originali fornitori
-- Cartella Drive sorgente: [SCHEDE ORIGINALI FORNITORI - DA ELABORARE](https://drive.google.com/drive/folders/1Y1qgl2rih8Ikbjf6ch4CgG5Qtwg6k6hS).
-- Il workflow `.github/workflows/sync-drive.yml` legge PDF/DOCX, estrae i campi con OCR, traduce nelle cinque lingue e passa i dati a `_BUILD/engine.py`.
-- Configurare i secret GitHub `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON`, `OPENAI_API_KEY`, `DRIVE_SOURCE_FOLDER_ID` (cartella input) e `DRIVE_CATALOG_FOLDER_ID` (cartella catalogo ufficiale; `1vEyctBT3z9F5-hFM-DeTWEsjaY2I8drb`).
-- Per scrivere nel catalogo che si trova in My Drive, configurare anche `GOOGLE_DRIVE_IMPERSONATED_USER` con un account Google Workspace e abilitare la delega a livello di dominio per il service account. In alternativa, usare una cartella in un Drive condiviso.
-- Condividere la cartella sorgente con l'indirizzo email del service account indicato nel JSON GitHub.
-- Un prodotto già presente viene pubblicato come `DUPLICATE_...` con evidenziazione blu nell'indice; i campi assenti restano vuoti. Il Carpaccio di tartufo estivo in olio è il prodotto `28_CARPACCIO_DI_TARTUFO_ESTIVO_IN_OLIO`, distinto dal prodotto 06 in acqua.
-- La sincronizzazione automatica avviene ogni 15 minuti e aggiorna `main` solo dopo validazione. I file invariati vengono riconosciuti tramite impronta e saltano estrazione, traduzione e generazione.
-- Dopo la validazione il job genera HTML/PDF in uno spazio temporaneo dell'esecuzione e carica/aggiorna in Drive le cartelle prodotto; le rimozioni gestite vengono spostate nel cestino Drive. Le schede già presenti nel repository e sul sito non vengono rigenerate o cancellate dal job.
+In **Settings → Secrets and variables → Actions** configura:
 
-Aggiornato: 06/06/2026
+**Secrets**
+- `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON`: JSON completo del service account.
+- `OPENAI_API_KEY`: chiave API usata per estrazione e traduzione.
+- `GOOGLE_DRIVE_IMPERSONATED_USER`: opzionale, solo per delega Workspace in My Drive.
+
+**Variables**
+- `DRIVE_SOURCE_FOLDER_ID`: ID della cartella di ingresso facoltativa **DA ELABORARE**; i nuovi originali possono essere messi direttamente in ELABORATE.
+- `DRIVE_PROCESSED_FOLDER_ID`: ID della cartella autorevole **ELABORATE** (`1RcuKuZrdGgQUOq-2j-Nr-tcdnGDsWhGX`).
+- `DRIVE_CATALOG_FOLDER_ID`: ID della cartella **HOUSE_OF_TARTUFO_PREMIUM** sul Drive condiviso.
+
+Condividi con l'indirizzo service account le cartelle **ELABORATE**, di ingresso (se usata) e del catalogo. La variabile `DRIVE_PROCESSED_FOLDER_ID` deve puntare alla cartella ELABORATE già esistente: il workflow non ne crea una seconda.
+
+## Pubblicazione e anteprima
+
+La repo è già collegata a Vercel tramite GitHub: il workflow crea una pull request con il catalogo validato e Vercel genera la preview automaticamente. Dopo il superamento dei controlli sulla preview, gli eventi pianificati e quelli avviati da `main` possono unire la pull request; Vercel pubblica quindi il nuovo `main` sul dominio ufficiale. Una esecuzione manuale resta in preview per impostazione predefinita. Il job verifica che indice e PDF siano effettivamente visibili sul sito ufficiale prima di rinominare gli originali o aggiornare il manifest Drive. Non servono Vercel CLI, token, ID di team/progetto o modifiche a **Ignored Build Step**. Mantieni attiva l'integrazione GitHub già collegata al progetto Vercel.
+
+## Integrità dei contenuti
+
+- Codici lingua: ITA, FR, ENG, NL, DE.
+- Le cartelle e gli URL delle schede storiche non vengono rinominati.
+- I 27 prodotti storici vengono copiati byte per byte dal repository nel bundle iniziale; solo una modifica esplicita del relativo originale ne genera una nuova versione.
+- EAN sconosciuti non vengono inventati; campi tecnici mancanti bloccano la pubblicazione.
+- Carpaccio di tartufo estivo in olio è il prodotto 28, distinto dal carpaccio in acqua prodotto 06.
+- Manifest e dati temporanei restano in Drive e nell'ambiente effimero di GitHub Actions, mai nei commit del catalogo.
+
+## Generazione manuale locale
+
+- Tutte le lingue: `python _BUILD/engine.py _BUILD/p01.json . 06/06/2026`
+- Solo tedesco: `python _BUILD/engine.py _BUILD/p01.json . 06/06/2026 DE`
+- Indice statico: `python _BUILD/build_index.py`
+- Verifiche: `python -m unittest discover -s tests -v` e `node --test tests/search.test.js`
