@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import uuid
+import base64
 import urllib.error
 import urllib.request
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -12,6 +13,26 @@ from pathlib import Path
 RENEW_BEFORE_MS = 24 * 60 * 60 * 1000
 REQUESTED_LIFETIME_MS = 6 * 24 * 60 * 60 * 1000
 GITHUB_OIDC_AUDIENCE = "https://technical-sheets.houseoftartufo.com/drive-watch"
+OIDC_DIAGNOSTIC_CLAIMS = (
+    "iss", "aud", "repository", "repository_id", "repository_owner_id",
+    "ref", "workflow_ref", "event_name", "iat", "nbf", "exp",
+)
+
+
+def oidc_claim_summary(token):
+    """Return only public workflow claims for diagnosing a rejected OIDC token."""
+    try:
+        header_segment, payload_segment, _ = token.split(".")
+        decode = lambda segment: json.loads(base64.urlsafe_b64decode(segment + "=" * (-len(segment) % 4)))
+        header = decode(header_segment)
+        claims = decode(payload_segment)
+        return {
+            "alg": header.get("alg"),
+            "kid": header.get("kid"),
+            **{name: claims.get(name) for name in OIDC_DIAGNOSTIC_CLAIMS},
+        }
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return {"jwt_format": "invalid"}
 
 
 def request_github_oidc_token():
@@ -63,6 +84,9 @@ class WorkerDriveWatchState:
             with urllib.request.urlopen(request, timeout=30) as response:
                 body = response.read()
         except urllib.error.HTTPError as exc:
+            if exc.code == 403:
+                print("Rejected GitHub OIDC claims (token omitted): " +
+                      json.dumps(oidc_claim_summary(self.token), sort_keys=True))
             raise RuntimeError(f"Cloudflare watch state API returned HTTP {exc.code}") from None
         if method == "GET":
             try:

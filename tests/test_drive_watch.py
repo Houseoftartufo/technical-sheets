@@ -1,5 +1,6 @@
 import json
 import unittest
+import base64
 from urllib.parse import parse_qs, urlsplit
 from unittest.mock import Mock, call
 from unittest.mock import patch
@@ -63,6 +64,21 @@ class DriveWatchTests(unittest.TestCase):
     def test_oidc_request_requires_the_actions_identity_endpoint(self):
         with self.assertRaisesRegex(RuntimeError, "id-token: write"):
             ensure_drive_watch.request_github_oidc_token()
+
+    def test_oidc_diagnostics_include_only_non_secret_identity_claims(self):
+        def segment(value):
+            return base64.urlsafe_b64encode(json.dumps(value).encode()).decode().rstrip("=")
+        token = ".".join((
+            segment({"alg": "RS256", "kid": "public-key-id"}),
+            segment({"repository": "Houseoftartufo/technical-sheets", "actor": "private-actor", "ref": "refs/heads/main"}),
+            "signature-is-never-reported",
+        ))
+        summary = ensure_drive_watch.oidc_claim_summary(token)
+        self.assertEqual(summary["repository"], "Houseoftartufo/technical-sheets")
+        self.assertEqual(summary["ref"], "refs/heads/main")
+        self.assertEqual(summary["kid"], "public-key-id")
+        self.assertNotIn("actor", summary)
+        self.assertNotIn("signature", json.dumps(summary))
 
     def test_missing_webhook_configuration_skips_without_drive_calls(self):
         result = ensure_drive_watch.ensure(Mock(), {"webhook_url": "", "webhook_token": ""}, Mock())
