@@ -32,7 +32,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
         run: |
           missing=()
-          for name in CF_ACCOUNT_ID CF_API_TOKEN DRIVE_WEBHOOK_TOKEN DRIVE_DISPATCH_TOKEN; do
+          for name in CF_ACCOUNT_ID CF_API_TOKEN DRIVE_WEBHOOK_TOKEN DRIVE_STATE_API_TOKEN DRIVE_DISPATCH_TOKEN; do
             if [[ -z "${!name}" ]]; then missing+=("$name"); fi
           done
           if (( ${#missing[@]} )); then
@@ -55,9 +55,11 @@ jobs:
           workingDirectory: cloudflare/drive-webhook
           secrets: |
             DRIVE_WEBHOOK_TOKEN
+            DRIVE_STATE_API_TOKEN
             GITHUB_DISPATCH_TOKEN
         env:
           DRIVE_WEBHOOK_TOKEN: ${{ secrets.DRIVE_WEBHOOK_TOKEN }}
+          DRIVE_STATE_API_TOKEN: ${{ secrets.DRIVE_STATE_API_TOKEN }}
           GITHUB_DISPATCH_TOKEN: ${{ secrets.DRIVE_DISPATCH_TOKEN }}
       - name: Verify Worker health endpoint
         if: steps.preflight.outputs.enabled == 'true'

@@ -52,6 +52,7 @@ jobs:
           DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID || secrets.DRIVE_SOURCE_FOLDER_ID }}
           DRIVE_WEBHOOK_URL: ${{ vars.DRIVE_WEBHOOK_URL }}
           DRIVE_WEBHOOK_TOKEN: ${{ secrets.DRIVE_WEBHOOK_TOKEN }}
+          DRIVE_STATE_API_TOKEN: ${{ secrets.DRIVE_STATE_API_TOKEN }}
         run: python _BUILD/ensure_drive_watch.py
       - name: Prepare sync run
         id: prepare

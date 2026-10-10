@@ -159,7 +159,7 @@ def main():
     try:
         from sync_drive import FOLDER_ID, drive_client
         state_store = WorkerDriveWatchState(
-            os.environ["DRIVE_WEBHOOK_URL"], os.environ["DRIVE_WEBHOOK_TOKEN"]
+            os.environ["DRIVE_WEBHOOK_URL"], os.environ["DRIVE_STATE_API_TOKEN"]
         )
         state = state_store.get_variable()
         result = ensure(
