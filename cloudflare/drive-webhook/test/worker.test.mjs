@@ -210,6 +210,9 @@ describe("Drive webhook on the Cloudflare Workers runtime", () => {
       http.post("https://api.github.com/repos/Houseoftartufo/technical-sheets/actions/workflows/sync-drive.yml/dispatches", async ({ request }) => {
         dispatches += 1;
         expect(request.headers.get("Authorization")).toBe("Bearer fixture-github-token");
+        expect(request.headers.get("User-Agent")).toBe(
+          "technical-sheets-drive-webhook/1.0 (+https://github.com/Houseoftartufo/technical-sheets)",
+        );
         expect(await request.json()).toEqual({ ref: "main", inputs: { publish_to_production: "true" } });
         return new HttpResponse(null, { status: 204 });
       }),
