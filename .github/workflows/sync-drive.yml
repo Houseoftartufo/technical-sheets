@@ -46,14 +46,12 @@ jobs:
           pip install -r requirements-drive.txt
       - name: Maintain Google Drive push channel
         id: watch
-        continue-on-error: true
         env:
           GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
           GOOGLE_DRIVE_IMPERSONATED_USER: ${{ secrets.GOOGLE_DRIVE_IMPERSONATED_USER }}
           DRIVE_SOURCE_FOLDER_ID: ${{ vars.DRIVE_SOURCE_FOLDER_ID || secrets.DRIVE_SOURCE_FOLDER_ID }}
           DRIVE_WEBHOOK_URL: ${{ vars.DRIVE_WEBHOOK_URL }}
           DRIVE_WEBHOOK_TOKEN: ${{ secrets.DRIVE_WEBHOOK_TOKEN }}
-          DRIVE_WATCH_STATE: ${{ vars.DRIVE_WATCH_STATE }}
         run: python _BUILD/ensure_drive_watch.py
       - name: Prepare sync run
         id: prepare

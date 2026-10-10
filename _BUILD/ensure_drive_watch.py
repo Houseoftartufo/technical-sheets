@@ -10,41 +10,44 @@ from pathlib import Path
 
 RENEW_BEFORE_MS = 24 * 60 * 60 * 1000
 REQUESTED_LIFETIME_MS = 6 * 24 * 60 * 60 * 1000
-VARIABLE_NAME = "DRIVE_WATCH_STATE"
-API_VERSION = "2022-11-28"
-
-
-class GitHubVariables:
-    def __init__(self, token, repository):
+class WorkerDriveWatchState:
+    def __init__(self, worker_url, token):
+        self.url = worker_url.rstrip("/").removesuffix("/drive") + "/watch-state"
         self.token = token
-        self.owner, self.repo = repository.split("/", 1)
 
-    def _request(self, method, path, body=None):
-        data = json.dumps(body).encode("utf-8") if body is not None else None
+    def _request(self, method, value=None):
+        data = json.dumps(value, separators=(",", ":")).encode("utf-8") if value is not None else None
         request = urllib.request.Request(
-            f"https://api.github.com/repos/{self.owner}/{self.repo}/actions/variables{path}",
+            self.url,
             data=data,
             method=method,
             headers={
                 "Authorization": f"Bearer {self.token}",
-                "Accept": "application/vnd.github+json",
-                "X-GitHub-Api-Version": API_VERSION,
+                "Accept": "application/json",
                 "Content-Type": "application/json",
+                "Cache-Control": "no-store",
             },
         )
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
-                return response.status
+                body = response.read()
         except urllib.error.HTTPError as exc:
-            if exc.code == 404:
-                return 404
-            raise RuntimeError(f"GitHub repository variable API returned HTTP {exc.code}") from None
+            raise RuntimeError(f"Cloudflare watch state API returned HTTP {exc.code}") from None
+        if method == "GET":
+            try:
+                state = json.loads(body.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                raise RuntimeError("Cloudflare returned invalid Drive watch state") from None
+            if state is not None and not isinstance(state, dict):
+                raise RuntimeError("Cloudflare returned invalid Drive watch state")
+            return state
+        return None
+
+    def get_variable(self):
+        return self._request("GET")
 
     def set_variable(self, value):
-        payload = {"name": VARIABLE_NAME, "value": json.dumps(value, separators=(",", ":"))}
-        status = self._request("PATCH", f"/{VARIABLE_NAME}", payload)
-        if status == 404:
-            self._request("POST", "", payload)
+        self._request("PUT", value)
 
 
 def _stop_channel(drive, channel_id, resource_id):
@@ -155,8 +158,10 @@ def main():
         return 0
     try:
         from sync_drive import FOLDER_ID, drive_client
-        state = json.loads(os.environ.get("DRIVE_WATCH_STATE", "{}") or "{}")
-        github = GitHubVariables(os.environ["GH_TOKEN"], os.environ["GITHUB_REPOSITORY"])
+        state_store = WorkerDriveWatchState(
+            os.environ["DRIVE_WEBHOOK_URL"], os.environ["DRIVE_WEBHOOK_TOKEN"]
+        )
+        state = state_store.get_variable()
         result = ensure(
             drive_client(),
             {
@@ -165,7 +170,7 @@ def main():
                 "source_folder_id": os.environ.get("DRIVE_SOURCE_FOLDER_ID") or FOLDER_ID,
                 "state": state,
             },
-            github,
+            state_store,
         )
         _write_status(result)
         print(f"Drive push channel: {result['status']}")

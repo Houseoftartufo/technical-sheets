@@ -1,6 +1,7 @@
 import json
 import unittest
 from unittest.mock import Mock, call
+from unittest.mock import patch
 
 from _BUILD import ensure_drive_watch
 
@@ -23,6 +24,23 @@ class DriveWatchTests(unittest.TestCase):
         changes = self.drive.changes.return_value
         changes.getStartPageToken.return_value.execute.return_value = {"startPageToken": "page-123"}
         changes.watch.return_value.execute.return_value = {"resourceId": "resource-456", "expiration": str(self.config["now_ms"] + 6 * 86400_000)}
+
+    @patch("_BUILD.ensure_drive_watch.urllib.request.urlopen")
+    def test_worker_state_store_reads_and_writes_cloudflare_durable_state(self, urlopen):
+        from _BUILD.ensure_drive_watch import WorkerDriveWatchState
+
+        urlopen.return_value.__enter__.return_value.status = 200
+        urlopen.return_value.__enter__.return_value.read.return_value = b'{"id":"channel-1"}'
+        store = WorkerDriveWatchState("https://worker.example/drive", "secret-token")
+        self.assertEqual(store.get_variable(), {"id": "channel-1"})
+        store.set_variable({"id": "channel-2"})
+        self.assertEqual(urlopen.call_count, 2)
+        get_request = urlopen.call_args_list[0].args[0]
+        put_request = urlopen.call_args_list[1].args[0]
+        self.assertEqual(get_request.full_url, "https://worker.example/watch-state")
+        self.assertEqual(get_request.get_header("Authorization"), "Bearer secret-token")
+        self.assertEqual(put_request.get_method(), "PUT")
+        self.assertEqual(json.loads(put_request.data), {"id": "channel-2"})
 
     def test_missing_webhook_configuration_skips_without_drive_calls(self):
         result = ensure_drive_watch.ensure(Mock(), {"webhook_url": "", "webhook_token": ""}, Mock())
