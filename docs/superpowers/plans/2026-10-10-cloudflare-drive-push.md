@@ -64,11 +64,11 @@
 - Modify: `README.md`
 - Modify: `tests/test_workflow_config.py`
 
-**Interfaces:** The deployment workflow uses `cloudflare/wrangler-action@v4`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID`; it installs the two Worker secrets and records the deployed URL as `DRIVE_WEBHOOK_URL`.
+**Interfaces:** The deployment workflow uses `cloudflare/wrangler-action@v4`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID`; it installs the two Worker secrets and verifies the health endpoint. The stable Worker URL is configured once as `DRIVE_WEBHOOK_URL`.
 
 - [x] Test deployment workflow triggers from `main` changes or manual dispatch and never prints secrets.
 - [ ] Deploy Worker on main pushes touching `cloudflare/drive-webhook/**`; upload `DRIVE_WEBHOOK_TOKEN` and the repository secret `DRIVE_DISPATCH_TOKEN` as Worker secrets, with the latter bound internally as `GITHUB_DISPATCH_TOKEN`.
-- [x] Save deployed stable Worker endpoint to repository variable with the built-in GitHub token.
+- [x] Use a stable `workers.dev` hostname so recurring deploys do not need permission to modify repository variables.
 - [ ] Document the two required external credentials, their least-privilege scopes, secret names, and how to trigger first channel creation without exposing secret values.
 - [ ] Run `python -m unittest discover -s tests -v`, `node --test tests/search.test.js tests/drive-webhook.test.mjs`, YAML validation, and `git diff --check`.
 
