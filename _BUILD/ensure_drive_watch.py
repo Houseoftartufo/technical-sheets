@@ -6,10 +6,41 @@ import time
 import uuid
 import urllib.error
 import urllib.request
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from pathlib import Path
 
 RENEW_BEFORE_MS = 24 * 60 * 60 * 1000
 REQUESTED_LIFETIME_MS = 6 * 24 * 60 * 60 * 1000
+GITHUB_OIDC_AUDIENCE = "https://technical-sheets.houseoftartufo.com/drive-watch"
+
+
+def request_github_oidc_token():
+    """Request a short-lived identity token for the GitHub Actions watch job."""
+    request_url = os.environ.get("ACTIONS_ID_TOKEN_REQUEST_URL")
+    request_token = os.environ.get("ACTIONS_ID_TOKEN_REQUEST_TOKEN")
+    if not request_url or not request_token:
+        raise RuntimeError("GitHub Actions OIDC is unavailable; grant id-token: write to the watch job")
+
+    parsed = urlsplit(request_url)
+    query = [(key, value) for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+             if key != "audience"]
+    query.append(("audience", GITHUB_OIDC_AUDIENCE))
+    token_url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment))
+    request = urllib.request.Request(
+        token_url,
+        headers={"Authorization": f"Bearer {request_token}", "Accept": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, UnicodeDecodeError, json.JSONDecodeError):
+        raise RuntimeError("GitHub Actions could not issue the Drive watch identity token") from None
+    token = payload.get("value") if isinstance(payload, dict) else None
+    if not isinstance(token, str) or not token:
+        raise RuntimeError("GitHub Actions returned an invalid Drive watch identity token")
+    return token
+
+
 class WorkerDriveWatchState:
     def __init__(self, worker_url, token):
         self.url = worker_url.rstrip("/").removesuffix("/drive") + "/watch-state"
@@ -22,7 +53,7 @@ class WorkerDriveWatchState:
             data=data,
             method=method,
             headers={
-                "X-Drive-Watch-Secret": self.token,
+                "Authorization": f"Bearer {self.token}",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
                 "Cache-Control": "no-store",
@@ -149,6 +180,13 @@ def _write_status(result):
                 stream.write(f"{result['reason']}\n\n")
             if result.get("expiration_ms"):
                 stream.write(f"Scadenza: {result['expiration_ms']}\n\n")
+    output = os.environ.get("GITHUB_OUTPUT")
+    if output:
+        status = result.get("status", "error")
+        if status not in {"active", "renewed", "skipped", "error"}:
+            status = "error"
+        with open(output, "a", encoding="utf-8") as stream:
+            stream.write(f"status={status}\n")
 
 
 def main():
@@ -159,7 +197,7 @@ def main():
     try:
         from sync_drive import FOLDER_ID, drive_client
         state_store = WorkerDriveWatchState(
-            os.environ["DRIVE_WEBHOOK_URL"], os.environ["DRIVE_STATE_API_TOKEN"]
+            os.environ["DRIVE_WEBHOOK_URL"], request_github_oidc_token()
         )
         state = state_store.get_variable()
         result = ensure(

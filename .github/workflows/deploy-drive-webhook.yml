@@ -7,6 +7,12 @@ on:
       - "cloudflare/drive-webhook/**"
       - ".github/workflows/deploy-drive-webhook.yml"
   workflow_dispatch:
+    inputs:
+      smoke_test_dispatch:
+        description: Send one synthetic Drive notification and verify the Worker starts the sync workflow
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   actions: write
@@ -80,4 +86,57 @@ jobs:
               except Exception:
                   if time.monotonic() >= deadline: raise
                   time.sleep(5)
+          PY
+      - name: Verify Worker can dispatch the sync workflow
+        if: steps.preflight.outputs.enabled == 'true' && inputs.smoke_test_dispatch
+        env:
+          WORKER_URL: ${{ steps.deploy.outputs.deployment-url }}
+          DRIVE_WEBHOOK_TOKEN: ${{ secrets.DRIVE_WEBHOOK_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+
+          repository = "Houseoftartufo/technical-sheets"
+          api = f"https://api.github.com/repos/{repository}/actions/workflows/sync-drive.yml/runs?event=workflow_dispatch&per_page=20"
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+
+          def get_runs():
+              request = urllib.request.Request(api, headers=headers)
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  return json.loads(response.read().decode("utf-8"))["workflow_runs"]
+
+          baseline = max((run["id"] for run in get_runs()), default=0)
+          worker_url = os.environ["WORKER_URL"].rstrip("/")
+          notification = urllib.request.Request(
+              worker_url + "/drive",
+              data=b"",
+              method="POST",
+              headers={
+                  "X-Goog-Channel-Token": os.environ["DRIVE_WEBHOOK_TOKEN"],
+                  "X-Goog-Channel-ID": "smoke-test-" + os.environ["GITHUB_RUN_ID"],
+                  "X-Goog-Resource-ID": "smoke-test-resource",
+                  "X-Goog-Resource-State": "update",
+                  "User-Agent": "technical-sheets-webhook-smoke-test",
+              },
+          )
+          with urllib.request.urlopen(notification, timeout=20) as response:
+              if response.status != 202:
+                  raise SystemExit(f"Worker returned unexpected smoke-test status {response.status}")
+
+          deadline = time.monotonic() + 150
+          while time.monotonic() < deadline:
+              matches = [run for run in get_runs()
+                         if run["id"] > baseline and run["head_branch"] == "main"]
+              if matches:
+                  run = max(matches, key=lambda item: item["id"])
+                  print(f"Worker dispatch verified with GitHub workflow run {run['id']}")
+                  break
+              time.sleep(5)
+          else:
+              raise SystemExit("Worker accepted the notification but GitHub did not start the sync workflow")
           PY
