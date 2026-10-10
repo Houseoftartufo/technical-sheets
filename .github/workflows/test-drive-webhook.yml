@@ -1,0 +1,35 @@
+name: Test Drive webhook
+
+on:
+  pull_request:
+    paths:
+      - "cloudflare/drive-webhook/**"
+      - ".github/workflows/test-drive-webhook.yml"
+      - ".github/workflows/deploy-drive-webhook.yml"
+  push:
+    branches: [main]
+    paths:
+      - "cloudflare/drive-webhook/**"
+      - ".github/workflows/test-drive-webhook.yml"
+      - ".github/workflows/deploy-drive-webhook.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: cloudflare/drive-webhook
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: cloudflare/drive-webhook/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run wrangler:dry-run

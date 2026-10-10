@@ -1,17 +1,18 @@
+import { DurableObject } from "cloudflare:workers";
+
 const REPOSITORY = "Houseoftartufo/technical-sheets";
 const WORKFLOW = "sync-drive.yml";
 const MAIN_REF = "main";
 const CHANGE_STATES = new Set(["add", "update", "remove", "trash", "untrash", "change"]);
 
-function equalSecret(actual, expected) {
-  const left = new TextEncoder().encode(actual ?? "");
-  const right = new TextEncoder().encode(expected ?? "");
-  let difference = left.length ^ right.length;
-  const length = Math.max(left.length, right.length);
-  for (let index = 0; index < length; index += 1) {
-    difference |= (left[index] ?? 0) ^ (right[index] ?? 0);
-  }
-  return difference === 0;
+async function equalSecret(actual, expected) {
+  if (typeof actual !== "string" || typeof expected !== "string" || expected.length === 0) return false;
+  const encoder = new TextEncoder();
+  const [actualHash, expectedHash] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(actual)),
+    crypto.subtle.digest("SHA-256", encoder.encode(expected)),
+  ]);
+  return crypto.subtle.timingSafeEqual(actualHash, expectedHash);
 }
 
 function response(status, body = "") {
@@ -28,7 +29,7 @@ export default {
     if (url.pathname !== "/drive") return response(404, "not found");
     if (request.method !== "POST") return response(405, "method not allowed");
     if (!env.DRIVE_WEBHOOK_TOKEN) return response(503, "webhook is not configured");
-    if (!equalSecret(request.headers.get("X-Goog-Channel-Token"), env.DRIVE_WEBHOOK_TOKEN)) {
+    if (!(await equalSecret(request.headers.get("X-Goog-Channel-Token"), env.DRIVE_WEBHOOK_TOKEN))) {
       return response(403, "forbidden");
     }
 
@@ -36,35 +37,42 @@ export default {
     if (state === "sync" || !CHANGE_STATES.has(state)) return response(204);
     if (!env.DISPATCHER) return response(503, "dispatch service is not configured");
     try {
-      const objectId = env.DISPATCHER.idFromName("drive-change-batcher");
-      const result = await env.DISPATCHER.get(objectId).fetch("https://dispatcher.internal/schedule", { method: "POST" });
-      return result.ok ? response(202, "accepted") : response(503, "dispatch unavailable");
+      await env.DISPATCHER.getByName("drive-change-batcher").schedule();
+      return response(202, "accepted");
     } catch {
       return response(503, "dispatch unavailable");
     }
   },
 };
 
-export class DriveDispatchDebouncer {
+export class DriveDispatchDebouncer extends DurableObject {
   constructor(ctx, env) {
-    this.ctx = ctx;
-    this.env = env;
+    super(ctx, env);
+    this.ctx.storage.sql.exec(`
+      CREATE TABLE IF NOT EXISTS dispatch_state (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        revision INTEGER NOT NULL DEFAULT 0,
+        attempts INTEGER NOT NULL DEFAULT 0
+      )
+    `);
+    this.ctx.storage.sql.exec("INSERT OR IGNORE INTO dispatch_state (id) VALUES (1)");
   }
 
-  async fetch(request) {
-    if (request.method !== "POST") return response(405, "method not allowed");
-    const revision = (await this.ctx.storage.get("revision")) ?? 0;
-    await this.ctx.storage.put("revision", revision + 1);
+  async schedule() {
+    this.ctx.storage.sql.exec("UPDATE dispatch_state SET revision = revision + 1 WHERE id = 1");
     await this.ctx.storage.setAlarm(Date.now() + 20_000);
-    return response(202, "queued");
   }
 
   async alarm() {
-    const dispatchedRevision = await this.ctx.storage.get("revision");
-    const attempts = (await this.ctx.storage.get("attempts")) ?? 0;
+    const dispatchedRevision = this.ctx.storage.sql.exec(
+      "SELECT revision FROM dispatch_state WHERE id = 1",
+    ).one().revision;
+    const attempt = this.ctx.storage.sql.exec(
+      "SELECT attempts FROM dispatch_state WHERE id = 1",
+    ).one().attempts;
+
     try {
-      const fetcher = this.env.FETCH ?? fetch;
-      const upstream = await fetcher(
+      const upstream = await fetch(
         `https://api.github.com/repos/${REPOSITORY}/actions/workflows/${WORKFLOW}/dispatches`,
         {
           method: "POST",
@@ -77,17 +85,22 @@ export class DriveDispatchDebouncer {
           body: JSON.stringify({ ref: MAIN_REF, inputs: { publish_to_production: "true" } }),
         },
       );
-      if (!upstream.ok) throw new Error("GitHub dispatch failed");
-      const latestRevision = await this.ctx.storage.get("revision");
-      if (latestRevision === dispatchedRevision) {
-        await this.ctx.storage.delete("revision");
-        await this.ctx.storage.delete("attempts");
-      } else {
-        await this.ctx.storage.setAlarm(Date.now() + 20_000);
+      if (!upstream.ok) {
+        console.error(JSON.stringify({ event: "github_dispatch_failed", status: upstream.status, attempt: attempt + 1 }));
+        throw new Error("GitHub workflow dispatch failed");
       }
-    } catch {
-      const nextAttempt = Math.min(attempts + 1, 8);
-      await this.ctx.storage.put("attempts", nextAttempt);
+
+      const cleared = this.ctx.storage.sql.exec(
+        "UPDATE dispatch_state SET revision = 0, attempts = 0 WHERE id = 1 AND revision = ?",
+        dispatchedRevision,
+      ).rowsWritten;
+      if (cleared === 0) await this.ctx.storage.setAlarm(Date.now() + 20_000);
+    } catch (error) {
+      if (error instanceof TypeError) {
+        console.error(JSON.stringify({ event: "github_dispatch_network_error", attempt: attempt + 1 }));
+      }
+      const nextAttempt = Math.min(attempt + 1, 8);
+      this.ctx.storage.sql.exec("UPDATE dispatch_state SET attempts = ? WHERE id = 1", nextAttempt);
       await this.ctx.storage.setAlarm(Date.now() + Math.min(60_000 * 2 ** (nextAttempt - 1), 3_600_000));
     }
   }
