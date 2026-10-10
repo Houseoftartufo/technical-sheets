@@ -28,9 +28,9 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertNotIn("pull-requests:", self.workflow)
         self.assertNotIn("contents: read\n", self.workflow)
 
-    def test_maintains_drive_push_channel_and_surfaces_registration_failure(self):
+    def test_maintains_drive_push_channel_without_blocking_polling(self):
         watch = self.workflow.split("- name: Maintain Google Drive push channel", 1)[1].split("- name: Prepare sync run", 1)[0]
-        self.assertNotIn("continue-on-error: true", watch)
+        self.assertIn("continue-on-error: true", watch)
         self.assertIn("_BUILD/ensure_drive_watch.py", watch)
         self.assertIn("DRIVE_WEBHOOK_URL", watch)
         self.assertIn("DRIVE_WEBHOOK_TOKEN", watch)
