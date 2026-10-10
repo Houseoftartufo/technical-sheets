@@ -15,7 +15,7 @@ La sincronizzazione esistente scansiona le cartelle autorevoli, confronta i cont
 - Cloudflare Worker conserva come secret `DRIVE_WEBHOOK_TOKEN` e `GITHUB_DISPATCH_TOKEN`.
 - Il Durable Object usa storage SQLite per raggruppare le notifiche per 20 secondi e conservare i retry; non archivia file o dati prodotto.
 - `DRIVE_WEBHOOK_TOKEN` è generato casualmente, verificato in tempo costante e non compare nei log o nel repository.
-- `GITHUB_DISPATCH_TOKEN` è un token fine-grained limitato al repository `Houseoftartufo/technical-sheets` con il solo permesso Actions: write.
+- Il secret GitHub `DRIVE_DISPATCH_TOKEN` è un token fine-grained limitato al repository `Houseoftartufo/technical-sheets` con il solo permesso Actions: write. Il workflow lo installa nel Worker con il binding interno `GITHUB_DISPATCH_TOKEN`.
 - `CLOUDFLARE_API_TOKEN` è un secret GitHub Actions limitato al singolo account Cloudflare e ai permessi necessari per deployare il Worker.
 - Le credenziali Google e OpenAI restano esclusivamente nei GitHub Secrets esistenti; Cloudflare non riceve accesso a Drive.
 - Le richieste non valide vengono respinte senza dispatch. Il Worker risponde con errore temporaneo se GitHub non accetta il dispatch, così Google può ritentare; il polling periodico recupera comunque l'evento.
@@ -27,7 +27,7 @@ Al primo run dopo aver configurato `DRIVE_WEBHOOK_URL` e `DRIVE_WEBHOOK_TOKEN`, 
 
 ## Configurazione una tantum
 
-GitHub repository secret `CLOUDFLARE_API_TOKEN` (permesso Cloudflare Workers Edit), repository variable `CLOUDFLARE_ACCOUNT_ID`, GitHub repository secret `GITHUB_DISPATCH_TOKEN` (Actions: write, repository-only), e un `DRIVE_WEBHOOK_TOKEN` casuale creato localmente e salvato direttamente come secret GitHub. Il workflow installa quest'ultimo e `GITHUB_DISPATCH_TOKEN` sul Worker, verifica `/health` e salva `DRIVE_WEBHOOK_URL`. Il canale viene attivato dal successivo run schedulato o manuale. `DRIVE_WATCH_STATE` è gestito dal workflow e non va inserito a mano.
+GitHub repository secret `CLOUDFLARE_API_TOKEN` (permesso Cloudflare Workers Edit), repository variable `CLOUDFLARE_ACCOUNT_ID`, GitHub repository secret `DRIVE_DISPATCH_TOKEN` (Actions: write, repository-only), e un `DRIVE_WEBHOOK_TOKEN` casuale creato localmente e salvato direttamente come secret GitHub. Il workflow installa quest'ultimo e `DRIVE_DISPATCH_TOKEN` nel Worker come binding interno `GITHUB_DISPATCH_TOKEN`, verifica `/health` e salva `DRIVE_WEBHOOK_URL`. Il canale viene attivato dal successivo run schedulato o manuale. `DRIVE_WATCH_STATE` è gestito dal workflow e non va inserito a mano.
 
 ## Criteri di accettazione
 
