@@ -135,6 +135,7 @@ describe("Drive webhook on the Cloudflare Workers runtime", () => {
     }));
 
     expect(result.status).toBe(403);
+    expect(await result.text()).toBe("forbidden:signature_invalid");
     expect(warn).toHaveBeenCalledWith(JSON.stringify({
       event: "github_oidc_rejected",
       reason: "signature_invalid",

@@ -135,17 +135,19 @@ export default {
     if (url.pathname === "/watch-state") {
       const bearerToken = request.headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
       let authorized;
+      let rejectionReason;
       try {
         const authentication = await isTrustedGithubActionsToken(bearerToken);
         authorized = authentication.trusted;
+        rejectionReason = authentication.reason;
         if (!authorized) {
-          console.warn(JSON.stringify({ event: "github_oidc_rejected", reason: authentication.reason }));
+          console.warn(JSON.stringify({ event: "github_oidc_rejected", reason: rejectionReason }));
         }
       } catch {
         return response(503, "GitHub authentication is temporarily unavailable");
       }
       if (!authorized) {
-        return response(403, "forbidden");
+        return response(403, `forbidden:${rejectionReason}`);
       }
       if (!env.DISPATCHER) return response(503, "state storage is not configured");
       const stateStore = env.DISPATCHER.getByName("drive-change-batcher");
