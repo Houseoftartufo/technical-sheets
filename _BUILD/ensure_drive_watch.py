@@ -22,7 +22,7 @@ class WorkerDriveWatchState:
             data=data,
             method=method,
             headers={
-                "X-Goog-Channel-Token": self.token,
+                "X-Drive-Watch-Secret": self.token,
                 "Accept": "application/json",
                 "Content-Type": "application/json",
                 "Cache-Control": "no-store",
