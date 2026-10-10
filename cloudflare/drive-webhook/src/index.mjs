@@ -64,27 +64,36 @@ async function getGithubJwks() {
 }
 
 async function isTrustedGithubActionsToken(token) {
-  if (typeof token !== "string" || token.length > 8192) return false;
+  if (typeof token !== "string" || token.length > 8192) return { trusted: false, reason: "token_invalid" };
   const parts = token.split(".");
-  if (parts.length !== 3) return false;
+  if (parts.length !== 3) return { trusted: false, reason: "token_invalid" };
   const header = decodeJsonSegment(parts[0]);
   const claims = decodeJsonSegment(parts[1]);
   const signature = decodeBase64Url(parts[2]);
-  if (!header || !claims || !signature || header.alg !== "RS256" || typeof header.kid !== "string") return false;
+  if (!header || !claims || !signature || header.alg !== "RS256" || typeof header.kid !== "string") {
+    return { trusted: false, reason: "token_invalid" };
+  }
 
   const now = Math.floor(Date.now() / 1000);
   const audiences = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-  if (claims.iss !== GITHUB_OIDC_ISSUER || !audiences.includes(GITHUB_OIDC_AUDIENCE) ||
-      claims.repository !== "Houseoftartufo/technical-sheets" ||
-      String(claims.repository_id) !== GITHUB_REPOSITORY_ID ||
-      String(claims.repository_owner_id) !== GITHUB_OWNER_ID ||
-      claims.ref !== "refs/heads/main" || claims.workflow_ref !== GITHUB_WORKFLOW_REF ||
-      !["push", "schedule", "workflow_dispatch"].includes(claims.event_name) ||
-      !Number.isInteger(claims.iat) || !Number.isInteger(claims.nbf) || !Number.isInteger(claims.exp) ||
-      claims.iat > now + 30 || claims.nbf > now + 30 || claims.exp <= now ||
-      claims.exp <= claims.iat || claims.exp - claims.iat > 600) {
-    return false;
-  }
+  const claimChecks = [
+    [claims.iss === GITHUB_OIDC_ISSUER, "issuer_mismatch"],
+    [audiences.includes(GITHUB_OIDC_AUDIENCE), "audience_mismatch"],
+    [claims.repository === REPOSITORY, "repository_mismatch"],
+    [String(claims.repository_id) === GITHUB_REPOSITORY_ID, "repository_id_mismatch"],
+    [String(claims.repository_owner_id) === GITHUB_OWNER_ID, "repository_owner_id_mismatch"],
+    [claims.ref === "refs/heads/main", "ref_mismatch"],
+    [claims.workflow_ref === GITHUB_WORKFLOW_REF, "workflow_mismatch"],
+    [["push", "schedule", "workflow_dispatch"].includes(claims.event_name), "event_not_allowed"],
+    [Number.isInteger(claims.iat) && Number.isInteger(claims.nbf) && Number.isInteger(claims.exp), "timestamps_invalid"],
+    [Number.isInteger(claims.iat) && claims.iat <= now + 30, "token_issued_in_future"],
+    [Number.isInteger(claims.nbf) && claims.nbf <= now + 30, "token_not_yet_valid"],
+    [Number.isInteger(claims.exp) && claims.exp > now, "token_expired"],
+    [Number.isInteger(claims.exp) && Number.isInteger(claims.iat) && claims.exp > claims.iat, "token_lifetime_invalid"],
+    [Number.isInteger(claims.exp) && Number.isInteger(claims.iat) && claims.exp - claims.iat <= 600, "token_lifetime_too_long"],
+  ];
+  const failedClaim = claimChecks.find(([passed]) => !passed);
+  if (failedClaim) return { trusted: false, reason: failedClaim[1] };
 
   const keys = await getGithubJwks();
   let jwk = keys.find((candidate) => candidate.kid === header.kid && candidate.kty === "RSA");
@@ -92,7 +101,7 @@ async function isTrustedGithubActionsToken(token) {
     githubJwksExpiresAt = 0;
     jwk = (await getGithubJwks()).find((candidate) => candidate.kid === header.kid && candidate.kty === "RSA");
   }
-  if (!jwk) return false;
+  if (!jwk) return { trusted: false, reason: "signing_key_not_found" };
 
   const key = await crypto.subtle.importKey(
     "jwk",
@@ -101,12 +110,15 @@ async function isTrustedGithubActionsToken(token) {
     false,
     ["verify"],
   );
-  return crypto.subtle.verify(
+  const signatureValid = await crypto.subtle.verify(
     "RSASSA-PKCS1-v1_5",
     key,
     signature,
     encoder.encode(`${parts[0]}.${parts[1]}`),
   );
+  return signatureValid
+    ? { trusted: true, reason: null }
+    : { trusted: false, reason: "signature_invalid" };
 }
 
 function response(status, body = "") {
@@ -124,7 +136,11 @@ export default {
       const bearerToken = request.headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
       let authorized;
       try {
-        authorized = await isTrustedGithubActionsToken(bearerToken);
+        const authentication = await isTrustedGithubActionsToken(bearerToken);
+        authorized = authentication.trusted;
+        if (!authorized) {
+          console.warn(JSON.stringify({ event: "github_oidc_rejected", reason: authentication.reason }));
+        }
       } catch {
         return response(503, "GitHub authentication is temporarily unavailable");
       }

@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { http, HttpResponse } from "msw";
 import { setupNetwork } from "@msw/cloudflare";
 import { env } from "cloudflare:workers";
@@ -121,6 +121,26 @@ describe("Drive webhook on the Cloudflare Workers runtime", () => {
       headers: { Authorization: `Bearer ${header}.${payload}.${corruptedSignature}` },
     }));
     expect(invalidSignatureResponse.status).toBe(403);
+  });
+
+  it("logs only a safe rejection category for an invalid OIDC signature", async () => {
+    mockGithubOidcKeys();
+    const token = await signedOidcToken();
+    const [header, payload, signature] = token.split(".");
+    const corruptedSignature = `${signature[0] === "A" ? "B" : "A"}${signature.slice(1)}`;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = await invoke(new Request("https://worker.example/watch-state", {
+      headers: { Authorization: `Bearer ${header}.${payload}.${corruptedSignature}` },
+    }));
+
+    expect(result.status).toBe(403);
+    expect(warn).toHaveBeenCalledWith(JSON.stringify({
+      event: "github_oidc_rejected",
+      reason: "signature_invalid",
+    }));
+    expect(JSON.stringify(warn.mock.calls)).not.toContain(token);
+    warn.mockRestore();
   });
 
   it("rejects an invalid Google channel token and does not queue work", async () => {
