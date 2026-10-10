@@ -5,6 +5,7 @@ import sys
 import time
 import uuid
 import base64
+import re
 import urllib.error
 import urllib.request
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -84,10 +85,15 @@ class WorkerDriveWatchState:
             with urllib.request.urlopen(request, timeout=30) as response:
                 body = response.read()
         except urllib.error.HTTPError as exc:
+            diagnostic = ""
             if exc.code == 403:
+                response_body = exc.read(256).decode("utf-8", errors="replace").strip()
+                match = re.fullmatch(r"forbidden:([a-z_]+)", response_body)
+                if match:
+                    diagnostic = f" ({match.group(1)})"
                 print("Rejected GitHub OIDC claims (token omitted): " +
                       json.dumps(oidc_claim_summary(self.token), sort_keys=True))
-            raise RuntimeError(f"Cloudflare watch state API returned HTTP {exc.code}") from None
+            raise RuntimeError(f"Cloudflare watch state API returned HTTP {exc.code}{diagnostic}") from None
         if method == "GET":
             try:
                 state = json.loads(body.decode("utf-8"))
