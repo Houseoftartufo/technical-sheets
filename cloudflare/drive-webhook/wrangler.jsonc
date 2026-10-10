@@ -12,5 +12,4 @@
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["DriveDispatchDebouncer"] }
   ]
-}
-
+}\n

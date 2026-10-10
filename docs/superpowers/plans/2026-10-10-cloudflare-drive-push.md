@@ -80,5 +80,4 @@
 - [ ] Confirm the Drive changes channel is active for the actual shared drive and its next renewal deadline is stored.
 - [ ] Send an authenticated test notification to the Worker and verify a GitHub workflow run starts from `main`.
 - [ ] Confirm the run does not alter the catalog when Drive has no changes and that the existing five-minute workflow remains enabled.
-- [ ] Upload a harmless duplicate supplier PDF and verify it is archived with the duplicate error prefix without regenerating the product; restore/delete only the designated test upload using Drive's normal recoverable flow.
-
+- [ ] Upload a harmless duplicate supplier PDF and verify it is archived with the duplicate error prefix without regenerating the product; restore/delete only the designated test upload using Drive's normal recoverable flow.\n
