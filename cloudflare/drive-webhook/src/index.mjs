@@ -266,6 +266,7 @@ export class DriveDispatchDebouncer extends DurableObject {
             Authorization: `Bearer ${this.env.GITHUB_DISPATCH_TOKEN}`,
             Accept: "application/vnd.github+json",
             "Content-Type": "application/json",
+            "User-Agent": "technical-sheets-drive-webhook/1.0 (+https://github.com/Houseoftartufo/technical-sheets)",
             "X-GitHub-Api-Version": "2022-11-28",
           },
           body: JSON.stringify({ ref: MAIN_REF, inputs: { publish_to_production: "true" } }),
