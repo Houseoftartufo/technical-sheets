@@ -48,6 +48,8 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("GITHUB_DISPATCH_TOKEN: ${{ secrets.DRIVE_DISPATCH_TOKEN }}", deploy)
         self.assertNotIn("secrets.GITHUB_DISPATCH_TOKEN", deploy)
         self.assertIn("DRIVE_WEBHOOK_TOKEN", deploy)
+        self.assertIn("DRIVE_STATE_API_TOKEN", deploy)
+        self.assertIn("secrets.DRIVE_STATE_API_TOKEN", self.workflow)
         self.assertIn("DRIVE_WEBHOOK_URL", self.readme)
         self.assertIn("/health", deploy)
         self.assertIn('"User-Agent":"technical-sheets-health-check"', deploy)

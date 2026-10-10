@@ -22,6 +22,7 @@ In **Settings → Secrets and variables → Actions** configura:
 - `CLOUDFLARE_API_TOKEN`: token Cloudflare con permesso **Workers Edit**, limitato all'account usato per il Worker.
 - `DRIVE_DISPATCH_TOKEN`: token fine-grained limitato a questa repository con il solo permesso **Actions: write**; il workflow lo installa nel Worker con il binding interno `GITHUB_DISPATCH_TOKEN`.
 - `DRIVE_WEBHOOK_TOKEN`: valore casuale di almeno 32 byte, condiviso solo tra il canale Drive e il Worker; viene caricato sul Worker dal workflow di deploy.
+- `DRIVE_STATE_API_TOKEN`: valore casuale distinto, usato per proteggere l'API di stato del canale nel Worker.
 
 **Variables**
 - `DRIVE_SOURCE_FOLDER_ID`: ID della cartella di ingresso facoltativa **DA ELABORARE**; i nuovi originali possono essere messi direttamente in ELABORATE.
@@ -38,7 +39,7 @@ Il workflow `Deploy Drive webhook` crea un endpoint HTTPS Cloudflare Worker. Un 
 
 Per attivarlo una volta sola:
 
-1. In GitHub aggiungi i tre secret Cloudflare/GitHub elencati sopra e la variabile `CLOUDFLARE_ACCOUNT_ID`.
+1. In GitHub aggiungi i secret Cloudflare/GitHub elencati sopra e la variabile `CLOUDFLARE_ACCOUNT_ID`.
 2. Crea `DRIVE_WEBHOOK_TOKEN` localmente (per esempio con `python -c "import secrets; print(secrets.token_urlsafe(48))"`) e inseriscilo direttamente come secret GitHub. Non inviarlo in chat né inserirlo nei file del repository.
 3. Avvia **Actions → Deploy Drive webhook → Run workflow** su `main`. Il workflow installa i due secret nel Worker e verifica il suo endpoint. Imposta una volta la variabile `DRIVE_WEBHOOK_URL` all'URL stabile indicato sopra; i deploy successivi non richiedono altre modifiche.
 4. Al successivo controllo automatico (entro 5 minuti) il workflow registra il canale Google Drive e salva lo stato nel Durable Object Cloudflare, protetto da `DRIVE_WEBHOOK_TOKEN`. Da quel momento gli upload e le rimozioni generano l'avvio automatico; il polling rimane attivo come rete di sicurezza.
