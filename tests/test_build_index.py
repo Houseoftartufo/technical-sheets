@@ -9,6 +9,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILDER = ROOT / "_BUILD" / "build_index.py"
+sys.path.insert(0, str(ROOT / "_BUILD"))
+from build_index import load_static_titles
 
 
 class BuildIndexTests(unittest.TestCase):
@@ -23,9 +25,8 @@ class BuildIndexTests(unittest.TestCase):
 
     def make_site_root(self, root):
         root.mkdir(parents=True)
-        for directory in ROOT.iterdir():
-            if directory.is_dir() and directory.name[:2].isdigit():
-                (root / directory.name).mkdir()
+        for folder in load_static_titles():
+            (root / folder).mkdir()
 
     def test_default_index_still_contains_only_the_27_static_products(self):
         with tempfile.TemporaryDirectory() as temp:
