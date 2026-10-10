@@ -205,7 +205,7 @@ jobs:
           else:
               raise SystemExit("Timed out waiting for Vercel Git preview checks")
           text="\n".join((item.get("output",{}).get("summary") or "")+"\n"+(item.get("output",{}).get("text") or "") for item in comments)
-          candidates=re.findall(r"https://([A-Za-z0-9.-]+\.vercel\.app)",text)
+          candidates=re.findall(r"([A-Za-z0-9.-]+\.vercel\.app)",text)
           candidates=[host for host in candidates if "vercel.live" not in host]
           if not candidates:
               raise SystemExit("Vercel passed but no preview hostname was present in the check output")
