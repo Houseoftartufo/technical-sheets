@@ -1,0 +1,108 @@
+name: Deploy Drive webhook
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "cloudflare/drive-webhook/**"
+      - ".github/workflows/deploy-drive-webhook.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: drive-webhook-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check deployment credentials
+        id: preflight
+        env:
+          CF_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DRIVE_WEBHOOK_TOKEN: ${{ secrets.DRIVE_WEBHOOK_TOKEN }}
+          GITHUB_DISPATCH_TOKEN: ${{ secrets.GITHUB_DISPATCH_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          missing=()
+          for name in CF_ACCOUNT_ID CF_API_TOKEN DRIVE_WEBHOOK_TOKEN GITHUB_DISPATCH_TOKEN; do
+            if [[ -z "${!name}" ]]; then missing+=("$name"); fi
+          done
+          if (( ${#missing[@]} )); then
+            if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+              echo "Missing Cloudflare deployment configuration: ${missing[*]}" >&2
+              exit 1
+            fi
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Cloudflare webhook deploy skipped; configure the documented Actions secrets and variables to enable it."
+            exit 0
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+      - name: Deploy Worker and install its secrets
+        id: deploy
+        if: steps.preflight.outputs.enabled == 'true'
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare/drive-webhook
+          secrets: |
+            DRIVE_WEBHOOK_TOKEN
+            GITHUB_DISPATCH_TOKEN
+        env:
+          DRIVE_WEBHOOK_TOKEN: ${{ secrets.DRIVE_WEBHOOK_TOKEN }}
+          GITHUB_DISPATCH_TOKEN: ${{ secrets.GITHUB_DISPATCH_TOKEN }}
+      - name: Verify Worker health endpoint
+        if: steps.preflight.outputs.enabled == 'true'
+        env:
+          WORKER_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          python - <<'PY'
+          import os, time, urllib.request
+          url=os.environ.get("WORKER_URL", "").rstrip("/")
+          if not url.startswith("https://"):
+              raise SystemExit("Cloudflare did not return an HTTPS Worker URL")
+          request=urllib.request.Request(url+"/health", headers={"Cache-Control":"no-cache"})
+          deadline=time.monotonic()+120
+          while True:
+              try:
+                  with urllib.request.urlopen(request,timeout=15) as response:
+                      if response.status == 200 and response.read().decode("utf-8") == "ok":
+                          print("Cloudflare Worker health check passed")
+                          break
+              except Exception:
+                  if time.monotonic() >= deadline: raise
+                  time.sleep(5)
+          PY
+      - name: Save verified Worker URL for Drive channel renewal
+        if: steps.preflight.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          WORKER_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.error, urllib.request
+          owner,repo=os.environ["GH_REPOSITORY"].split("/",1)
+          url=f"https://api.github.com/repos/{owner}/{repo}/actions/variables/DRIVE_WEBHOOK_URL"
+          headers={"Authorization":f"Bearer {os.environ['GH_TOKEN']}","Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28","Content-Type":"application/json"}
+          payload=json.dumps({"name":"DRIVE_WEBHOOK_URL","value":os.environ["WORKER_URL"]}).encode()
+          request=urllib.request.Request(url,data=payload,headers=headers,method="PATCH")
+          try:
+              with urllib.request.urlopen(request,timeout=30): pass
+          except urllib.error.HTTPError as exc:
+              if exc.code != 404: raise SystemExit(f"Could not save Worker URL (HTTP {exc.code})")
+              request=urllib.request.Request(f"https://api.github.com/repos/{owner}/{repo}/actions/variables",data=payload,headers=headers,method="POST")
+              try:
+                  with urllib.request.urlopen(request,timeout=30): pass
+              except urllib.error.HTTPError as create_error:
+                  raise SystemExit(f"Could not create Worker URL variable (HTTP {create_error.code})") from None
+          print("Verified Worker URL saved as the DRIVE_WEBHOOK_URL repository variable")
+          PY

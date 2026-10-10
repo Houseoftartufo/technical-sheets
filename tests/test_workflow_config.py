@@ -21,11 +21,34 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn('cron: "*/5 * * * *"', self.workflow)
 
     def test_has_only_scoped_permissions_needed_for_preview_and_catalog_push(self):
+        self.assertIn("actions: write", self.workflow)
         self.assertIn("contents: write", self.workflow)
         self.assertIn("deployments: read", self.workflow)
         self.assertIn("statuses: read", self.workflow)
         self.assertNotIn("pull-requests:", self.workflow)
         self.assertNotIn("contents: read\n", self.workflow)
+
+    def test_maintains_drive_push_channel_without_blocking_polling(self):
+        watch = self.workflow.split("- name: Maintain Google Drive push channel", 1)[1].split("- name: Prepare sync run", 1)[0]
+        self.assertIn("continue-on-error: true", watch)
+        self.assertIn("_BUILD/ensure_drive_watch.py", watch)
+        self.assertIn("DRIVE_WEBHOOK_URL", watch)
+        self.assertIn("DRIVE_WEBHOOK_TOKEN", watch)
+        self.assertIn("DRIVE_WATCH_STATE", watch)
+        self.assertIn("DRIVE_SOURCE_FOLDER_ID", watch)
+        self.assertIn('"drive_push_channel"', self.workflow)
+
+    def test_cloudflare_deploy_workflow_is_main_only_or_manual_and_scoped(self):
+        deploy = (ROOT / ".github" / "workflows" / "deploy-drive-webhook.yml").read_text(encoding="utf-8")
+        self.assertIn("branches: [main]", deploy)
+        self.assertIn("workflow_dispatch:", deploy)
+        self.assertIn("cloudflare/wrangler-action@v4", deploy)
+        self.assertIn("CLOUDFLARE_API_TOKEN", deploy)
+        self.assertIn("GITHUB_DISPATCH_TOKEN", deploy)
+        self.assertIn("DRIVE_WEBHOOK_TOKEN", deploy)
+        self.assertIn("DRIVE_WEBHOOK_URL", deploy)
+        self.assertIn("/health", deploy)
+        self.assertNotIn("pull-requests: write", deploy)
 
     def test_does_not_depend_on_vercel_cli_or_vercel_secrets(self):
         for token in ("VERCEL_TOKEN", "VERCEL_ORG_ID", "VERCEL_PROJECT_ID", "vercel deploy", "vercel link"):
@@ -78,6 +101,12 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("collegata a Vercel tramite GitHub", self.readme)
         self.assertIn("preview", self.readme.lower())
         self.assertIn("Ignored Build Step", self.readme)
+
+    def test_readme_documents_cloudflare_drive_push_setup(self):
+        self.assertIn("CLOUDFLARE_API_TOKEN", self.readme)
+        self.assertIn("GITHUB_DISPATCH_TOKEN", self.readme)
+        self.assertIn("DRIVE_WEBHOOK_TOKEN", self.readme)
+        self.assertIn("Durable Object", self.readme)
 
 
 if __name__ == "__main__":
