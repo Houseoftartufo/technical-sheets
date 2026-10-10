@@ -1,6 +1,7 @@
 import json
 import unittest
 import base64
+import io
 from urllib.parse import parse_qs, urlsplit
 from unittest.mock import Mock, call
 from unittest.mock import patch
@@ -43,6 +44,19 @@ class DriveWatchTests(unittest.TestCase):
         self.assertEqual(get_request.get_header("Authorization"), "Bearer state-secret-token")
         self.assertEqual(put_request.get_method(), "PUT")
         self.assertEqual(json.loads(put_request.data), {"id": "channel-2"})
+
+    @patch("_BUILD.ensure_drive_watch.urllib.request.urlopen")
+    def test_worker_state_store_reports_only_a_safe_rejection_code(self, urlopen):
+        from _BUILD.ensure_drive_watch import WorkerDriveWatchState
+
+        urlopen.side_effect = ensure_drive_watch.urllib.error.HTTPError(
+            "https://worker.example/watch-state", 403, "Forbidden", {},
+            io.BytesIO(b"forbidden:signature_invalid"),
+        )
+        store = WorkerDriveWatchState("https://worker.example/drive", "state-secret-token")
+
+        with self.assertRaisesRegex(RuntimeError, r"HTTP 403 \(signature_invalid\)"):
+            store.get_variable()
 
     @patch.dict("os.environ", {
         "ACTIONS_ID_TOKEN_REQUEST_URL": "https://token.actions.githubusercontent.com/idtoken?api-version=2",
