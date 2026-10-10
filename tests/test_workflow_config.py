@@ -18,7 +18,7 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertIn("default: false", self.workflow)
         self.assertIn("push:", self.workflow)
         self.assertIn("branches: [main]", self.workflow)
-        self.assertIn('cron: "*/15 * * * *"', self.workflow)
+        self.assertIn('cron: "*/5 * * * *"', self.workflow)
 
     def test_has_only_scoped_permissions_needed_for_preview_and_catalog_push(self):
         self.assertIn("contents: write", self.workflow)

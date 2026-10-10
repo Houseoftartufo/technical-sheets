@@ -5,7 +5,7 @@ Catalogo multilingue House of Tartufo, con schede generate dal motore ufficiale 
 ## Caricamento nuove schede fornitori
 
 1. Aggiungi il PDF, DOC o DOCX originale del fornitore in **DA_ELABORARE**. Dopo estrazione, validazione, traduzione, anteprima e pubblicazione, il workflow lo sposta in **ELABORATE**, la lista autorevole dei prodotti pubblicati. È possibile aggiungere direttamente in ELABORATE solo un originale già approvato.
-2. GitHub Actions controlla la cartella ogni 15 minuti. Puoi anche avviare **Run workflow**: la preview è la modalità predefinita e solo da `main` puoi scegliere esplicitamente la pubblicazione ufficiale.
+2. GitHub Actions controlla la cartella ogni 5 minuti. È un controllo automatico periodico: GitHub può ritardare o saltare le esecuzioni pianificate, quindi non è un evento istantaneo di Drive. Puoi anche avviare **Run workflow**: la preview è la modalità predefinita e solo da `main` puoi scegliere esplicitamente la pubblicazione ufficiale.
 3. Il job estrae e valida i dati, crea le cinque lingue e genera HTML/PDF con `_BUILD/engine.py` e lo stesso layout del catalogo. Le informazioni mancanti non vengono inventate.
 4. Dopo preview e controlli, il workflow pubblica il bundle completo. Solo dopo il deploy ufficiale riuscito rinomina il documento in `CODICE_PRODOTTO__nome-originale.pdf` (o mantiene l'estensione Word), così resta ordinato in **ELABORATE**. Preview e run falliti non modificano Drive.
 
