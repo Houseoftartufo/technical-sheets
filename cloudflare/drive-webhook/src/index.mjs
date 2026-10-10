@@ -11,11 +11,12 @@ async function equalSecret(actual, expected) {
   expected = expected.trim();
   if (actual.length === 0 || expected.length === 0) return false;
   const encoder = new TextEncoder();
-  const [actualHash, expectedHash] = await Promise.all([
-    crypto.subtle.digest("SHA-256", encoder.encode(actual)),
-    crypto.subtle.digest("SHA-256", encoder.encode(expected)),
-  ]);
-  return crypto.subtle.timingSafeEqual(actualHash, expectedHash);
+  const actualBytes = encoder.encode(actual);
+  const expectedBytes = encoder.encode(expected);
+  if (actualBytes.byteLength !== expectedBytes.byteLength) {
+    return !crypto.subtle.timingSafeEqual(actualBytes, actualBytes);
+  }
+  return crypto.subtle.timingSafeEqual(actualBytes, expectedBytes);
 }
 
 function response(status, body = "") {
