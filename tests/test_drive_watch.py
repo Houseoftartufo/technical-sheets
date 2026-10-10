@@ -31,14 +31,14 @@ class DriveWatchTests(unittest.TestCase):
 
         urlopen.return_value.__enter__.return_value.status = 200
         urlopen.return_value.__enter__.return_value.read.return_value = b'{"id":"channel-1"}'
-        store = WorkerDriveWatchState("https://worker.example/drive", "secret-token")
+        store = WorkerDriveWatchState("https://worker.example/drive", "state-secret-token")
         self.assertEqual(store.get_variable(), {"id": "channel-1"})
         store.set_variable({"id": "channel-2"})
         self.assertEqual(urlopen.call_count, 2)
         get_request = urlopen.call_args_list[0].args[0]
         put_request = urlopen.call_args_list[1].args[0]
         self.assertEqual(get_request.full_url, "https://worker.example/watch-state")
-        self.assertEqual(get_request.get_header("X-drive-watch-secret"), "secret-token")
+        self.assertEqual(get_request.get_header("X-drive-watch-secret"), "state-secret-token")
         self.assertEqual(put_request.get_method(), "PUT")
         self.assertEqual(json.loads(put_request.data), {"id": "channel-2"})
 

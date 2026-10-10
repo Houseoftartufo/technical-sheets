@@ -8,6 +8,7 @@ export default defineConfig({
       miniflare: {
         bindings: {
           DRIVE_WEBHOOK_TOKEN: "fixture-drive-token",
+          DRIVE_STATE_API_TOKEN: "fixture-state-token",
           GITHUB_DISPATCH_TOKEN: "fixture-github-token",
         },
       },

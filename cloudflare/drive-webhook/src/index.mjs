@@ -30,8 +30,8 @@ export default {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/health") return response(200, "ok");
     if (url.pathname === "/watch-state") {
-      if (!env.DRIVE_WEBHOOK_TOKEN) return response(503, "watch state is not configured");
-      if (!(await equalSecret(request.headers.get("X-Drive-Watch-Secret"), env.DRIVE_WEBHOOK_TOKEN))) {
+      if (!env.DRIVE_STATE_API_TOKEN) return response(503, "watch state is not configured");
+      if (!(await equalSecret(request.headers.get("X-Drive-Watch-Secret"), env.DRIVE_STATE_API_TOKEN))) {
         return response(403, "forbidden");
       }
       if (!env.DISPATCHER) return response(503, "state storage is not configured");
